@@ -1,0 +1,257 @@
+class LibraryDatabase:
+    def __init__(self):
+        # Criação de um banco de dados - Só é necessário executar uma vez
+        # Para Verificar quais os bancos existentes execute o comando: show databases;  no terminal do mysql
+        
+        self.mydb = mysql.connector.connect(host="localhost",user="root",password="jasbhisto",database="librarydatabase")
+        self.mycursor = self.mydb.cursor()
+        self.TableAlreadyExists = False
+        
+        # Criação de um banco de dados - Só é necessário executar uma vez
+        # Para Verificar quais os bancos existentes execute o comando: show databases;  no terminal do mysql
+
+        # self.mycursor = self.mydb.cursor()
+        # self.mycursor.execute("CREATE DATABASE LibraryDatabase")
+        
+    def get_connection_id(self):
+        # Retorna o id da conexão
+        print("\nConection Id:",self.mydb.connection_id)
+        
+    def create_table(self):
+        
+        # use LibraryDatabase; -> comando para selecionar o banco de dados
+        # show tables; -> comando para verificar as tabelas existentes no banco de dados
+
+        # Criar tabela com as colunas : Código, Nome, Autor, Ano, Editora, Edição, Páginas, Preço, Quantidade, Categoria e Idioma
+        # Código -> Chave Primária (Primary Key)
+        # Criação de um cursor para executar comandos SQL
+        if self.TableAlreadyExists:
+            return
+        else:
+            table = "CREATE TABLE books (id INT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(255), name VARCHAR(255), author VARCHAR(255), year INT, publisher VARCHAR(255), edition INT, pages INT, price FLOAT, quantity INT, category VARCHAR(255), language VARCHAR(255))"
+            self.mycursor.execute(table)
+            self.TableAlreadyExists = True
+        # Para verificar as tabelas existentes no banco de dados execute o comando: show tables; no terminal do mysql -> use desc nome_da_tabela para verificar as colunas existentes na tabela
+        
+    def delete_table(self):
+        
+        # Deletar a tabela
+        if not self.TableAlreadyExists:
+            print("\nDrop Fail - Table does not exist")
+            return
+        
+        else:
+            self.mycursor.execute("DROPED TABLE books")
+            self.TableAlreadyExists = False
+        
+
+    def insert_book(self, code, name, author, year, publisher, edition, pages, price, quantity, category, language):
+        
+        # Inserir um livro na tabela
+        sql = "INSERT INTO books (code, name, author, year, publisher, edition, pages, price, quantity, category, language) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        val = (code, name, author, year, publisher, edition, pages, price, quantity, category, language)
+        self.mycursor.execute(sql, val)
+        self.mydb.commit()
+        print(self.mycursor.rowcount, "record inserted.")   
+        
+    def delete_book(self, code):
+        
+        # Deletar um livro da tabela
+        
+        if self.mycursor.rowcount == 0:
+            print("No records found")
+        else:
+            # Verificar código do livro
+            self.mycursor.execute("SELECT * FROM books WHERE code = %s", (code,))
+            result = self.mycursor.fetchone()
+
+            if result is None:
+                print("No records found - Code does not exist")
+            else:
+                sql = "DELETE FROM books WHERE code = %s"
+                val = (code,)
+                self.mycursor.execute(sql, val)
+                self.mydb.commit()
+                print("Book of code",code,"sucessfull deleted.")
+                print(self.mycursor.rowcount, "record(s) deleted.")
+  
+  
+    def update_book(self, code, name, author, year, publisher, edition, pages, price, quantity, category, language):
+        
+        if self.mycursor.rowcount == 0:
+            print("No records found")
+            
+        else:
+            
+            #verificar código do livro e atualizar os valores
+            
+            self.mycursor.execute("SELECT * FROM books WHERE code = %s", (code,))
+            result = self.mycursor.fetchone()
+            
+            if result is None:
+                print("No records found - Code does not exist")
+                
+            else:
+                
+                sql = "UPDATE books SET name = %s, author = %s, year = %s, publisher = %s, edition = %s, pages = %s, price = %s, quantity = %s, category = %s, language = %s WHERE code = %s"
+                self.mycursor.execute(sql, (name, author, year, publisher, edition, pages, price, quantity, category, language, code))
+                self.mydb.commit()
+                
+                print(self.mycursor.rowcount, "record(s) affected")
+                print("Book of code",code,"sucessfull updated.")            
+                
+        
+
+
+    def Show_Table(self):
+        # Mostrar a tabela
+        self.mycursor.execute("SELECT * FROM books")
+        if self.mycursor.rowcount == 0:
+            print("No records found")
+            
+        else:
+            
+            print("Records found:\n")
+            myresult = self.mycursor.fetchall()
+            for x in myresult:
+                #Printar os valores de cada coluna de forma organizada
+                print("Id:",x[0],"\nCode:",x[1],"\nName:",x[2],"\nAuthor:",x[3],"\nYear:",x[4],"\nPublisher:",x[5],"\nEdition:",x[6],"\nPages:",x[7],"\nPrice:",x[8],"\nQuantity:",x[9],"\nCategory:",x[10],"\nLanguage:",x[11],"\n\n")
+   
+        
+        
+        
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=====++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 
+
+ opcao = -1
+    
+    while opcao != 0:
+        
+        print("\n1 - Inserir livro")
+        print("2 - Excluir livro")
+        print("3 - Atualizar livro")
+        print("4 - Mostrar tabela")
+        print("5 - Deletar tabela")
+        print("0 - Sair")
+        
+        opcao = int(input("\nDigite a opção desejada: "))
+        
+        if opcao == 1:
+            
+            dadosLivro = []
+            print("\nInsira os dados do livro:")
+            print("Insira o código do livro:")
+            dadosLivro.append(input())
+            print("Insira o nome do livro:")
+            dadosLivro.append(input())
+            print("Insira o autor do livro:")
+            dadosLivro.append(input())
+            print("Insira o ano do livro:")
+            dadosLivro.append(input())
+            print("Insira a editora do livro:")
+            dadosLivro.append(input())
+            print("Insira a edição do livro:") 
+            dadosLivro.append(input())
+            print("Insira o número de páginas do livro:")
+            dadosLivro.append(input())
+            print("Insira o preço do livro:")
+            dadosLivro.append(input())
+            print("Insira a quantidade de livros:")
+            dadosLivro.append(input())
+            print("Insira a categoria do livro:")
+            dadosLivro.append(input())
+            print("Insira o idioma do livro:")
+            dadosLivro.append(input())
+            print("\n") 
+            
+            library_db.insert_book(dadosLivro[0], dadosLivro[1], dadosLivro[2], dadosLivro[3], dadosLivro[4], dadosLivro[5], dadosLivro[6], dadosLivro[7], dadosLivro[8], dadosLivro[9], dadosLivro[10])
+            
+            
+        elif opcao == 2:
+            
+            print("\nInsira o código do livro que deseja excluir:")
+            codigo = input()
+            library_db.delete_book(codigo)
+            
+        elif opcao == 3:
+            
+            dadosLivro = []
+            code = input("Insira o código do livro que deseja alterar:")
+            dadosLivro = library_db.search_book(code)
+            
+            if len(dadosLivro) != 0:
+                
+                if input("Deseja alterar o nome do livro? (s/n):") == "s":
+                    print("Insira o novo nome do livro:")
+                    dadosLivro[0][2] = input()
+                    
+                elif input("Deseja alterar o autor do livro? (s/n):") == "s":
+                    print("Insira o novo autor do livro:")
+                    dadosLivro[0][3] = input()
+                    
+                elif input("Deseja alterar o ano do livro? (s/n):") == "s":
+                    print("Insira o novo ano do livro:")
+                    dadosLivro[0][4] = input()
+                    
+                elif input("Deseja alterar a editora do livro? (s/n):") == "s":
+                    print("Insira a nova editora do livro:")
+                    dadosLivro[0][5] = input()
+                    
+                elif input("Deseja alterar a edição do livro? (s/n):") == "s":
+                    print("Insira a nova edição do livro:")
+                    dadosLivro[0][6] = input()
+                
+                elif input("Deseja alterar o número de páginas do livro? (s/n):") == "s":
+                    print("Insira o novo número de páginas do livro:")
+                    dadosLivro[0][7] = input()
+                    
+                elif input("Deseja alterar o preço do livro? (s/n):") == "s":
+                    print("Insira o novo preço do livro:")
+                    dadosLivro[0][8] = input()
+                
+                elif input("Deseja alterar a quantidade de livros? (s/n):") == "s":
+                    print("Insira a nova quantidade de livros:")
+                    dadosLivro[0][9] = input()
+                    
+                elif input("Deseja alterar a categoria do livro? (s/n):") == "s":
+                    print("Insira a nova categoria do livro:")
+                    dadosLivro[0][10] = input()
+                    
+                elif input("Deseja alterar o idioma do livro? (s/n):") == "s":
+                    print("Insira o novo idioma do livro:")
+                    dadosLivro[0][11] = input()
+                    
+                
+                
+                library_db.update_book(dadosLivro[0][1], dadosLivro[0][2], dadosLivro[0][3], dadosLivro[0][4], dadosLivro[0][5], dadosLivro[0][6], dadosLivro[0][7], dadosLivro[0][8], dadosLivro[0][9], dadosLivro[0][10], dadosLivro[0][11])
+            
+            else:
+                print("Código não encontrado")
+            
+        elif opcao == 4:
+            
+            library_db.show_table()
+            
+        elif opcao == 5:
+            
+            if input("Deseja realmente deletar a tabela? (s/n):") == "s":
+                library_db.delete_table()
+                print("Tabela deletada com sucesso")
+                
+        elif opcao == 0:
+            
+            print("Saindo...")
+            
+                
+    
+            
+            
+            
+            
+            
+            
+            
+            
+            
+        
+            
