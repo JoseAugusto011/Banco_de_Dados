@@ -102,6 +102,28 @@ class FoodDatabase:
         except mysql.connector.Error as err:
             print("Erro ao buscar comida:", err)
 
+    def search_food_by_name(self, food_name):
+        
+        try:
+            self.mycursor.execute("SELECT * FROM food_table WHERE name = %s", (food_name,))
+            if self.mycursor.rowcount == 0:
+                print("Nenhum registro encontrado - Nome não existe")
+            else:
+                myresult = self.mycursor.fetchall()
+                for x in myresult:
+                    print("Comida encontrada:\n")
+                    print("ID:", x[0])
+                    print("Nome:", x[1])
+                    print("Sabor:", x[2])
+                    print("Preço:", x[3])
+                    print("Tipo de comida:", x[4])
+                    print("Região de origem:", x[5])
+                    print("Disponibilidade:", "Disponível" if x[6] else "Indisponível")
+                    print("URL da imagem:", x[7], "\n")
+                    
+        except mysql.connector.Error as err:
+            print("Erro ao buscar comida:", err)
+
     def show_table(self):
         if not self.TableAlreadyExists:
             print("\nFalha ao Mostrar - Tabela não existe")
@@ -302,6 +324,7 @@ if __name__ == "__main__":
         
         
         # Inserindo mais 100 dados de comidas brasileiras no banco de dados
+        #Banco_de_Dados\Imagens\Pamonha.JPEG
         food_db.insert_food("Pamonha", "Doce", 6.00, "Sobremesa", "Centro-Oeste", True, "https://www.example.com/pamonha.jpg")
         food_db.insert_food("Bolo de Rolo", "Doce", 12.00, "Sobremesa", "Nordeste", True, "https://www.example.com/bolo_de_rolo.jpg")
         food_db.insert_food("Carne de Sol", "Salgado", 35.00, "Prato Principal", "Nordeste", True, "https://www.example.com/carne_de_sol.jpg")
