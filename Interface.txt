@@ -1,0 +1,14 @@
+Tela INicial:
+
+Botoes : Menu (Lista todas as comidas típicas)
+                  Prato predileto (Procura apenas uma determinada comida)--> Função busca por nome
+                  Inserir (Adiciona prato ao banco de dados) 
+                  Remover (Remove comida típica)
+                  Atualizar (Atualiza as informações de uma comida)
+                  Atualiza_Preco
+		  Confere_faixa_preco
+		  Pesquisar por nome
+                  pesquisar por tipo
+                  pesquisar por sabor
+                  
+                  Sair (fecha o aplicativo)
