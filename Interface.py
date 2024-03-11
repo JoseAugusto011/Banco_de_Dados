@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import simpledialog
-from tkinter import destroy
+#from tkinter import destroy
 from tkinter import sys
 from backEnd import *
 
@@ -119,8 +119,10 @@ class Interface(tk.Tk): # Classe que herda de tk.Tk
         self.db.clear_table()
         self.db.delete_table()
         self.db.close_connection()
-        self.master.destroy()
-        sys.exit()
+        self.destroy()  # This will destroy the Tkinter window
+        
+
+
         
 
 if __name__ == "__main__":
