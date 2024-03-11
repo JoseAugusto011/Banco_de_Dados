@@ -1,0 +1,8 @@
+show databases;
+use name_database
+show tables;
+desc nome_table;
+
+
+
+drop table nome_table;
