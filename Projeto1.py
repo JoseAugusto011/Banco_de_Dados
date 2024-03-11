@@ -30,7 +30,18 @@ class FoodDatabase:
             return
         else:
             try:
-                table = """CREATE TABLE food_table (
+                # table = """CREATE TABLE food_table (
+                #             id INT AUTO_INCREMENT PRIMARY KEY,
+                #             name VARCHAR(255),
+                #             flavor VARCHAR(255),
+                #             price FLOAT,
+                #             food_type VARCHAR(255),
+                #             origin_region VARCHAR(255),
+                #             availability BOOLEAN,
+                #             image_url VARCHAR(255)
+                #         )"""
+                
+                table = """CREATE TABLE IF NOT EXISTS food_table (
                             id INT AUTO_INCREMENT PRIMARY KEY,
                             name VARCHAR(255),
                             flavor VARCHAR(255),
@@ -40,6 +51,11 @@ class FoodDatabase:
                             availability BOOLEAN,
                             image_url VARCHAR(255)
                         )"""
+                        
+                        
+                
+                
+                
                 self.mycursor.execute(table)
                 self.TableAlreadyExists = True
                 print("Tabela criada com sucesso.")
@@ -236,7 +252,27 @@ class FoodDatabase:
             
         except mysql.connector.Error as err:
             print("Erro ao buscar comida:", err)
+
+    def search_food_by_flavor(self, flavor):
+        try:
             
+            self.mycursor.execute("SELECT * FROM food_table WHERE flavor = %s",(flavor,))
+            myresult = self.mycursor.fetchall()
+            
+            if len(myresult) == 0:
+                print("Nenhum registro encontrado - Sabor não existe")
+                
+            else:
+                print("Registros encontrados:\n")
+                print("ID | Nome | Sabor | Preço | Tipo de comida | Região de origem | Disponibilidade | URL da imagem\n")
+                
+                for x in myresult:
+                    print(x[0], "|", x[1], "|", x[2], "|", x[3], "|", x[4], "|",
+                          x[5], "|", "Disponível" if x[6] else "Indisponível", "|", x[7])
+                    
+                self.mydb.commit()  # Limpa o cursor
+        except mysql.connector.Error as err:
+            print("Erro ao buscar comida:", err)            
 
     # Consulta de comida por preço (menor que) e (maior que)
     
@@ -289,6 +325,34 @@ class FoodDatabase:
         except mysql.connector.Error as err:
             print("Erro ao buscar comida:", err)
             
+    def search_food_by_price_between(self, price1, price2):
+        
+        if price1 < 0 or price2 < 0:
+            print("Preço inválido")
+            return
+        
+        try:
+            
+            self.mycursor.execute(
+                "SELECT * FROM food_table WHERE price BETWEEN %s AND %s", (price1, price2))
+            
+            myresult = self.mycursor.fetchall()
+            
+            if len(myresult) == 0:
+                print("Nenhum registro encontrado - Preço não existe")
+                
+            else:
+                print("Registros encontrados:\n")
+                print(
+                    "ID | Nome | Sabor | Preço | Tipo de comida | Região de origem | Disponibilidade | URL da imagem\n")
+                for x in myresult:
+                    print(x[0], "|", x[1], "|", x[2], "|", x[3], "|", x[4], "|",
+                          x[5], "|", "Disponível" if x[6] else "Indisponível", "|", x[7])
+                    
+            self.mydb.commit()  # Limpa o cursor
+            
+        except mysql.connector.Error as err:
+            print("Erro ao buscar comida:", err)
 # Mostrar elementos
 
     def show_table(self):
@@ -370,8 +434,186 @@ class FoodDatabase:
         except mysql.connector.Error as err:
             print("Erro ao fechar conexão:", err)
 
-
 # Menu de opções --> Função principal (Substituir posteriormente por UI)
+
+    def food_menu(self):
+        opcao = -1
+
+        while opcao != 0:
+            print("\n1 - Inserir comida")
+            print("2 - Excluir comida")
+            print("3 - Atualizar comida")
+            print("4 - Buscar comida por ID")
+            print("5 - Buscar comida por nome")
+            print("6 - Buscar comida por tipo")
+            print("7 - Buscar comida por região")
+            print("8 - Buscar comida por disponibilidade")
+            print("9 - Buscar comida por preço menor que")
+            print("10 - Buscar comida por preço maior que")
+            print("11 - Buscar comida por preço entre")
+            print("12 - Buscar comida por sabor")
+            print("13 - Mostrar tabela")
+            print("14 - Limpar tabela")
+            print("15 - Apagar tabela")
+            print("0 - Sair")
+
+            opcao = int(input("\nDigite a opção desejada: "))
+
+            if opcao == 1:
+                dados_comida = []
+                print("\nInsira os dados da comida\n")
+                print("Insira o nome da comida:")
+                dados_comida.append(input())
+                print("Insira o sabor da comida:")
+                dados_comida.append(input())
+                print("Insira o preço da comida:")
+                dados_comida.append(float(input()))
+                print("Insira o tipo da comida:")
+                dados_comida.append(input())
+                print("Insira a região de origem da comida:")
+                dados_comida.append(input())
+                print(
+                    "Insira a disponibilidade da comida (1 para disponível, 0 para indisponível):")
+                dados_comida.append(bool(int(input())))
+                print("Insira a URL da imagem da comida:")
+                dados_comida.append(input())
+                print("\n")
+
+                food_db.insert_food(*dados_comida)
+
+            elif opcao == 2:
+                print("\nInsira o ID da comida que deseja excluir:")
+                comida_id = int(input())
+                food_db.delete_food(comida_id)
+
+            elif opcao == 3:
+                print("\nInsira o ID da comida que deseja atualizar:")
+                comida_id = int(input())
+                dados_comida = food_db.search_food(comida_id)
+
+                if dados_comida:
+                    print("Comida encontrada. Insira as alterações desejadas:")
+                    print("Deseja alterar o nome da comida? (s/n):")
+
+                    if input() == "s":
+                        novo_nome = input("Insira o novo nome da comida: ")
+                    else:
+                        novo_nome = dados_comida[1]
+
+                    print("Deseja alterar o sabor da comida? (s/n):")
+                    if input() == "s":
+                        novo_sabor = input("Insira o novo sabor da comida: ")
+                    else:
+                        novo_sabor = dados_comida[2]
+
+                    print("Deseja alterar o preço da comida? (s/n):")
+                    if input() == "s":
+                        novo_preco = float(
+                            input("Insira o novo preço da comida: "))
+                    else:
+                        novo_preco = dados_comida[3]
+
+                    print("Deseja alterar o tipo da comida? (s/n):")
+                    if input() == "s":
+                        novo_tipo = input("Insira o novo tipo da comida: ")
+                    else:
+                        novo_tipo = dados_comida[4]
+
+                    print("Deseja alterar a região de origem da comida? (s/n):")
+                    if input() == "s":
+                        nova_regiao = input(
+                            "Insira a nova região de origem da comida: ")
+                    else:
+                        nova_regiao = dados_comida[5]
+
+                    print("Deseja alterar a disponibilidade da comida? (s/n):")
+                    if input() == "s":
+                        nova_disponibilidade = bool(int(input(
+                            "Insira a nova disponibilidade da comida (1 para disponível, 0 para indisponível): ")))
+                    else:
+                        nova_disponibilidade = dados_comida[6]
+
+                    print("Deseja alterar a URL da imagem da comida? (s/n):")
+                    if input() == "s":
+                        nova_url_imagem = input(
+                            "Insira a nova URL da imagem da comida: ")
+                    else:
+                        nova_url_imagem = dados_comida[7]
+
+                    food_db.update_food(comida_id, novo_nome, novo_sabor, novo_preco,
+                                        novo_tipo, nova_regiao, nova_disponibilidade, nova_url_imagem)
+                else:
+                    print("Comida não encontrada.")
+
+            elif opcao == 4:
+                print("\nInsira o ID da comida que deseja buscar:")
+                comida_id = int(input())
+                food_db.search_food_by_id(comida_id)
+
+            elif opcao == 5:
+                print("\nInsira o nome da comida que deseja buscar:")
+                comida_nome = input()
+                food_db.search_food_by_name(comida_nome)
+
+            elif opcao == 6:
+                print("\nInsira o tipo da comida que deseja buscar:")
+                comida_tipo = input()
+                food_db.search_food_by_type(comida_tipo)
+
+            elif opcao == 7:
+                print("\nInsira a região da comida que deseja buscar:")
+                comida_regiao = input()
+                food_db.search_food_by_region(comida_regiao)
+
+            elif opcao == 8:
+                print("\nInsira a disponibilidade da comida que deseja buscar (1 para disponível, 0 para indisponível):")
+                disponibilidade = bool(int(input()))
+                food_db.search_food_by_availability(disponibilidade)
+
+            elif opcao == 9:
+                print("\nInsira o preço máximo da comida que deseja buscar:")
+                preco_max = float(input())
+                food_db.search_food_by_price_less_than(preco_max)
+
+            elif opcao == 10:
+                print("\nInsira o preço mínimo da comida que deseja buscar:")
+                preco_min = float(input())
+                food_db.search_food_by_price_greater_than(preco_min)
+
+            elif opcao == 11:
+                print("\nInsira o preço mínimo da comida que deseja buscar:")
+                preco_min = float(input())
+                print("Insira o preço máximo da comida que deseja buscar:")
+                preco_max = float(input())
+                food_db.search_food_by_price_between(preco_min, preco_max)
+                
+            elif opcao == 12:
+                
+                print("\nInsira o sabor da comida que deseja buscar:")
+                comida_sabor = input()
+                food_db.search_food_by_flavor(comida_sabor)
+            
+            elif opcao == 13:
+                food_db.show_table()
+
+            elif opcao == 14:
+                print("\nTem certeza que deseja limpar os registros de toda a tabela? (s/n)")
+                confirmacao = input()
+                if confirmacao.lower() == 's':                
+                    food_db.clear_table()
+
+            elif opcao == 15:
+                print("\nTem certeza que deseja apagar toda a tabela? (s/n)")
+                confirmacao = input()
+                if confirmacao.lower() == 's':
+                    food_db.delete_table()
+
+            elif opcao == 0:
+                print("\nEncerrando programa...")
+
+            else:
+                print("\nOpção inválida. Por favor, digite novamente.")
+
 
 if __name__ == "__main__":
     # Defina suas configurações de conexão ao banco de dados
@@ -504,26 +746,30 @@ if __name__ == "__main__":
         food_db.insert_food("Feijão Verde", "Salgado", 15.00, "Prato Principal",
                             "Nordeste", True, "https://www.example.com/feijao_verde.jpg")
 
-       # food_db.search_food_by_name("Feijão Verde")
-        food_db.search_food_by_id(10)
-        food_db.search_food_by_name("Arroz Doce")
+    #    # food_db.search_food_by_name("Feijão Verde")
+    #     food_db.search_food_by_id(10)
+    #     food_db.search_food_by_name("Arroz Doce")
         
-        food_db.update_food(10, "Feijão Verde", "Salgado", 15.00, "Prato Principal",
-                            "Nordeste", True, "https://www.example.com/feijao_verde.jpg")
+    #     food_db.update_food(10, "Feijão Verde", "Salgado", 15.00, "Prato Principal",
+    #                         "Nordeste", True, "https://www.example.com/feijao_verde.jpg")
         
-        food_db.search_food_by_id(10)
+    #     food_db.search_food_by_id(10)
         
-        food_db.delete_food(10)
+    #     food_db.delete_food(10)
         
-        food_db.search_food_by_id(10)
+    #     food_db.search_food_by_id(10)
         
-        food_db.search_food_by_name("Feijão Verde")
+    #     food_db.search_food_by_name("Feijão Verde")
         
-        food_db.search_food_by_price_greater_than(20.00)
+    #     food_db.search_food_by_price_greater_than(20.00)
 
-        food_db.clear_table()
-        food_db.delete_table()
-        food_db.close_connection()
+    #     food_db.clear_table()
+    #     food_db.delete_table()
+    #     food_db.close_connection()
+    
+        food_db.food_menu()
+        
+        
 
     except mysql.connector.Error as err:
         print("Erro ao criar tabela:", err)
