@@ -1,56 +1,111 @@
 import tkinter as tk
+<<<<<<< Updated upstream
 from tkinter import messagebox
 from tkinter import simpledialog
 #from tkinter import destroy
 from tkinter import sys
+=======
+from tkinter import messagebox, simpledialog, sys, PhotoImage, Label, Frame, Canvas, Tk  
+from tkinter import *
+from tkinter import ttk, Toplevel
+>>>>>>> Stashed changes
 from backEnd import *
+from PIL import Image, ImageTk
+from tkinter.ttk import Button, Style
+import requests
+from io import BytesIO
+import re
 
-
-class Interface(tk.Tk): # Classe que herda de tk.Tk
+class Interface(Tk): # Classe que herda de Tk.Tk
     
     def __init__(self, db):
         
         super().__init__()
         self.title("Sistema de Comidas Típicas")
-        self.geometry("800x600")
+        self.geometry("1536x864")
         self.db = db
-        
-        # Criando os widgets da interface
-        self.menu_button = tk.Button(self, text="Menu", command=self.list_all_food)
-        self.menu_button.pack(pady=5)
 
-        self.favorite_button = tk.Button(self, text="Prato Predileto", command=self.search_food_by_name)
-        self.favorite_button.pack(pady=5)
+        # Adicione esta linha para mudar o ícone
+        self.iconbitmap('Imagens_sistema\\logo.ico')
 
-        self.insert_button = tk.Button(self, text="Inserir", command=self.insert_food)
-        self.insert_button.pack(pady=5)
+        # Carregue a imagem usando PIL e converta para PhotoImage
+        image = Image.open('Imagens_sistema\\Caranguejo (5).png')
+        photo = ImageTk.PhotoImage(image)
 
-        self.remove_button = tk.Button(self, text="Remover", command=self.delete_food)
-        self.remove_button.pack(pady=5)
+        # Crie um Canvas com a imagem
+        self.canvas = Canvas(self, width=1000, height=700)
+        self.canvas.pack(fill='both', expand=True)
+        self.canvas.create_image(0, 0, image=photo, anchor='nw')
+        self.canvas.image = photo  # mantenha uma referência à imagem
 
-        self.update_button = tk.Button(self, text="Atualizar", command=self.update_food)
-        self.update_button.pack(pady=5)
+        # Criando o frame
+        self.frame = Frame(self)
 
-        self.update_price_button = tk.Button(self, text="Atualizar Preço", command=self.update_food_price)
-        self.update_price_button.pack(pady=5)
+        # Adicione o frame ao Canvas
+        self.frame_window = self.canvas.create_window(768, 432, anchor='center', window=self.frame)
 
-        self.price_range_button = tk.Button(self, text="Verificar Faixa de Preço", command=self.search_food_by_price_range)
-        self.price_range_button.pack(pady=5)
+        # Criando os widgets da interface no frame
+        self.favorite_button = Button(self.frame, text="Menu", command=self.list_all_food)
+        self.favorite_button.pack(side='top', padx=5)
 
-        self.search_name_button = tk.Button(self, text="Pesquisar por Nome", command=self.search_food_by_name)
-        self.search_name_button.pack(pady=5)
+        self.favorite_button = Button(self.frame, text="Prato Predileto", command=self.search_food_by_name)
+        self.favorite_button.pack(side='top', padx=5)
 
-        self.search_type_button = tk.Button(self, text="Pesquisar por Tipo", command=self.search_food_by_type)
-        self.search_type_button.pack(pady=5)
+        self.insert_button = Button(self.frame, text="Inserir", command=self.insert_food)
+        self.insert_button.pack(side='top', padx=5)
 
-        self.search_flavor_button = tk.Button(self, text="Pesquisar por Sabor", command=self.search_food_by_flavor)
-        self.search_flavor_button.pack(pady=5)
+        self.remove_button = Button(self.frame, text="Remover", command=self.delete_food)
+        self.remove_button.pack(side='top', padx=5)
 
-        self.quit_button = tk.Button(self, text="Sair", command=self.quit)
-        self.quit_button.pack(pady=5)
-        
-        
-        
+        self.update_button = Button(self.frame, text="Atualizar", command=self.update_food)
+        self.update_button.pack(side='top', padx=5)
+
+        self.update_price_button = Button(self.frame, text="Atualizar Preço", command=self.update_food_price)
+        self.update_price_button.pack(side='top', padx=5)
+
+        self.price_range_button = Button(self.frame, text="Verificar Faixa de Preço", command=self.search_food_by_price_range)
+        self.price_range_button.pack(side='top', padx=5)
+
+        self.search_name_button = Button(self.frame, text="Pesquisar por Nome", command=self.search_food_by_name)
+        self.search_name_button.pack(side='top', padx=5)
+
+        self.search_type_button = Button(self.frame, text="Pesquisar por Tipo", command=self.search_food_by_type)
+        self.search_type_button.pack(side='top', padx=5)
+
+        self.search_flavor_button = Button(self.frame, text="Pesquisar por Sabor", command=self.search_food_by_flavor)
+        self.search_flavor_button.pack(side='top', padx=5)
+
+        # Botão de saída no canto inferior direito
+        self.quit_button = Button(self, text="Sair", command=self.quit)
+        self.quit_button.pack(side='bottom', anchor='se')
+
+    def list_all_food(self):
+        # Chame a função show_table para obter os dados como uma lista de tuplas
+        data = self.db.show_table_TK()
+
+        # Crie um novo pop-up para a tabela
+        table_popup = Toplevel(self)
+        table_popup.title("Menu")
+
+        # Crie a tabela
+        table = ttk.Treeview(table_popup, columns=("ID", "Nome", "Sabor", "Preço", "Tipo de comida", "Região de origem", "Disponibilidade", "URL da imagem"), show='headings')
+
+        # Adicione cabeçalhos à tabela
+        for col in table['columns']:
+            table.heading(col, text=col)
+
+        # Adicione os dados à tabela
+        for item in data:  # Comece na primeira linha
+            # Substitua '1' por 'Disponível' e '0' por 'Indisponível' na coluna "Disponibilidade"
+            item = list(item)
+            if int(item[6]) == 1:
+                item[6] = 'Disponível'
+            elif int(item[6]) == 0:
+                item[6] = 'Indisponível'
+            table.insert('', 'end', values=item)
+
+        # Empacote a tabela
+        table.pack(fill='both', expand=True)
         
     
     def insert_food(self):
@@ -78,13 +133,27 @@ class Interface(tk.Tk): # Classe que herda de tk.Tk
                 # Chamando o método update_food da classe FoodDatabase
         self.db.update_food(food_id, name, flavor, price, food_type, origin_region, availability, image_url)
 
-    def list_all_food(self):
-        self.db.show_table()
 
     def search_food_by_name(self):
-        food_name = tk.simpledialog.askstring("Pesquisar por Nome", "Digite o nome da comida:")
+        # Pergunte ao usuário o nome da comida
+        food_name = simpledialog.askstring("Input", "Qual é o nome da sua comida favorita?",
+                                parent=self)
         if food_name:
-            self.db.search_food_by_name(food_name)
+            # Chame a função do backend
+            result = self.db.search_food_by_name(food_name)
+            if result:
+                # Crie um novo pop-up
+                result_popup = Toplevel(self)
+                result_popup.title("Resultado")
+                
+                # Crie um widget Text para exibir o resultado
+                text = Text(result_popup, wrap='word')
+                # Formate o resultado para exibir cada registro em uma nova linha
+                formatted_result = '\n'.join(result.split('|'))
+                text.insert('end', formatted_result)
+                text.pack(expand=True, fill='both')
+            else:
+                messagebox.showinfo("Resultado", "Nenhum registro encontrado - Nome não existe")
 
 
     def delete_food(self):
@@ -129,8 +198,8 @@ if __name__ == "__main__":
     # Defina suas configurações de conexão ao banco de dados
     host = "localhost"
     user = "root"
-    password = "jasbhisto"
-    database = "food_db"
+    password = "010203"
+    database = "db"
 
     # Cria uma instância da fábrica do banco de dados e estabelece a conexão
     db_factory = DatabaseFactory(host, user, password, database)

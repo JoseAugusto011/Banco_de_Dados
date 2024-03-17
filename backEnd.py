@@ -367,6 +367,19 @@ class FoodDatabase:
             print("Erro ao buscar comida:", err)
             return None
 # Mostrar elementos
+    def show_table_TK(self):
+        try:
+            self.mycursor.execute("SELECT * FROM food_table")
+            myresult = self.mycursor.fetchall()
+            if len(myresult) == 0:
+                print("Nenhum registro retornado")
+                return None
+            else:
+                # Retorna os resultados como uma lista de tuplas
+                return myresult
+        except mysql.connector.Error as err:
+            print("Erro ao mostrar tabela:", err)
+            return None
 
     def show_table(self):
         if not self.TableAlreadyExists:
