@@ -161,10 +161,11 @@ class FoodDatabase:
                 print("Nenhum registro encontrado - ID não existe")
                 return None
             else:
-                retorno = "ID | Nome | Sabor | Preço | Tipo de comida | Região de origem | Disponibilidade | URL da imagem\n"
+                #retorno = "ID | Nome | Sabor | Preço | Tipo de comida | Região de origem | Disponibilidade | URL da imagem\n"
+                retorno = []
                 for x in myresult:
-                    retorno += str(x[0]) + " | " + x[1] + " | " + x[2] + " | " + str(x[3]) + " | " + x[4] + " | " + x[5] + " | " + "Disponível" if x[6] else "Indisponível" + " | " + x[7] + "\n"               
-           
+                    #retorno += str(x[0]) + " | " + x[1] + " | " + x[2] + " | " + str(x[3]) + " | " + x[4] + " | " + x[5] + " | " + "Disponível" if x[6] else "Indisponível" + " | " + x[7] + "\n"               
+                    retorno.append(x)
                 self.mydb.commit()  # Limpa o cursor
                 return retorno
         except mysql.connector.Error as err:
@@ -181,10 +182,11 @@ class FoodDatabase:
                 print("Nenhum registro encontrado - ID não existe")
                 return None
             else:
-                retorno = "ID | Nome | Sabor | Preço | Tipo de comida | Região de origem | Disponibilidade | URL da imagem\n"
+                retorno = []
                 for x in myresult:
-                    retorno += str(x[0]) + " | " + x[1] + " | " + x[2] + " | " + str(x[3]) + " | " + x[4] + " | " + x[5] + " | " + "Disponível" if x[6] else "Indisponível" + " | " + x[7] + "\n"               
-           
+                    #retorno += str(x[0]) + " | " + x[1] + " | " + x[2] + " | " + str(x[3]) + " | " + x[4] + " | " + x[5] + " | " + "Disponível" if x[6] else "Indisponível" + " | " + x[7] + "\n"               
+                    retorno.append(x)
+                    
                 self.mydb.commit()  # Limpa o cursor
                 return retorno
         except mysql.connector.Error as err:
@@ -201,10 +203,11 @@ class FoodDatabase:
                 return None
             else:
                 print("Registros encontrados:\n")
-                retorno = "ID | Nome | Sabor | Preço | Tipo de comida | Região de origem | Disponibilidade | URL da imagem\n"
+                retorno = []
                 for x in myresult:
-                    retorno += str(x[0]) + " | " + x[1] + " | " + x[2] + " | " + str(x[3]) + " | " + x[4] + " | " + x[5] + " | " + "Disponível" if x[6] else "Indisponível" + " | " + x[7] + "\n"               
-           
+                    #retorno += str(x[0]) + " | " + x[1] + " | " + x[2] + " | " + str(x[3]) + " | " + x[4] + " | " + x[5] + " | " + "Disponível" if x[6] else "Indisponível" + " | " + x[7] + "\n"               
+                    retorno.append(x)
+                    
                 self.mydb.commit()  # Limpa o cursor
                 return retorno
         except mysql.connector.Error as err:
@@ -222,10 +225,11 @@ class FoodDatabase:
                 return None
             else:
                 print("Registros encontrados:\n")
-                retorno = "ID | Nome | Sabor | Preço | Tipo de comida | Região de origem | Disponibilidade | URL da imagem\n"
+                retorno = []
                 for x in myresult:
-                    retorno += str(x[0]) + " | " + x[1] + " | " + x[2] + " | " + str(x[3]) + " | " + x[4] + " | " + x[5] + " | " + "Disponível" if x[6] else "Indisponível" + " | " + x[7] + "\n"               
-           
+                    #retorno += str(x[0]) + " | " + x[1] + " | " + x[2] + " | " + str(x[3]) + " | " + x[4] + " | " + x[5] + " | " + "Disponível" if x[6] else "Indisponível" + " | " + x[7] + "\n"               
+                    retorno.append(x)
+                    
                 self.mydb.commit()  # Limpa o cursor
                 return retorno
             
@@ -246,10 +250,11 @@ class FoodDatabase:
                 
             else:
                 
-                retorno = "ID | Nome | Sabor | Preço | Tipo de comida | Região de origem | Disponibilidade | URL da imagem\n"
+                retorno = []
                 for x in myresult:
-                    retorno += str(x[0]) + " | " + x[1] + " | " + x[2] + " | " + str(x[3]) + " | " + x[4] + " | " + x[5] + " | " + "Disponível" if x[6] else "Indisponível" + " | " + x[7] + "\n"               
-           
+                    #retorno += str(x[0]) + " | " + x[1] + " | " + x[2] + " | " + str(x[3]) + " | " + x[4] + " | " + x[5] + " | " + "Disponível" if x[6] else "Indisponível" + " | " + x[7] + "\n"               
+                    retorno.append(x)
+                    
                 self.mydb.commit()  # Limpa o cursor
                 return retorno
             
@@ -268,11 +273,11 @@ class FoodDatabase:
                 return None
                 
             else:
-                print("Registros encontrados:\n")
-                retorno = "ID | Nome | Sabor | Preço | Tipo de comida | Região de origem | Disponibilidade | URL da imagem\n"
+                retorno = []
                 for x in myresult:
-                    retorno += str(x[0]) + " | " + x[1] + " | " + x[2] + " | " + str(x[3]) + " | " + x[4] + " | " + x[5] + " | " + "Disponível" if x[6] else "Indisponível" + " | " + x[7] + "\n"               
-           
+                    #retorno += str(x[0]) + " | " + x[1] + " | " + x[2] + " | " + str(x[3]) + " | " + x[4] + " | " + x[5] + " | " + "Disponível" if x[6] else "Indisponível" + " | " + x[7] + "\n"               
+                    retorno.append(x)
+                    
                     
                 self.mydb.commit()  # Limpa o cursor
                 return retorno
@@ -296,11 +301,11 @@ class FoodDatabase:
                 print("Nenhum registro encontrado - Preço não existe")
                 return None
             else:
-                print("Registros encontrados:\n")
-                retorno = "ID | Nome | Sabor | Preço | Tipo de comida | Região de origem | Disponibilidade | URL da imagem\n"
+                retorno = []
                 for x in myresult:
-                    retorno += str(x[0]) + " | " + x[1] + " | " + x[2] + " | " + str(x[3]) + " | " + x[4] + " | " + x[5] + " | " + "Disponível" if x[6] else "Indisponível" + " | " + x[7] + "\n"               
-               
+                    #retorno += str(x[0]) + " | " + x[1] + " | " + x[2] + " | " + str(x[3]) + " | " + x[4] + " | " + x[5] + " | " + "Disponível" if x[6] else "Indisponível" + " | " + x[7] + "\n"               
+                    retorno.append(x)
+                    
                 self.mydb.commit()  # Limpa o cursor
                 return retorno
             
@@ -326,10 +331,10 @@ class FoodDatabase:
                 return None
             else:
                 print("Registros encontrados:\n")
-                retorno = "ID | Nome | Sabor | Preço | Tipo de comida | Região de origem | Disponibilidade | URL da imagem\n"
+                retorno = []
                 for x in myresult:
-                    retorno += str(x[0]) + " | " + x[1] + " | " + x[2] + " | " + str(x[3]) + " | " + x[4] + " | " + x[5] + " | " + "Disponível" if x[6] else "Indisponível" + " | " + x[7] + "\n"               
-           
+                    #retorno += str(x[0]) + " | " + x[1] + " | " + x[2] + " | " + str(x[3]) + " | " + x[4] + " | " + x[5] + " | " + "Disponível" if x[6] else "Indisponível" + " | " + x[7] + "\n"               
+                    retorno.append(x)
                 self.mydb.commit()  # Limpa o cursor
                 return retorno
             
@@ -355,11 +360,11 @@ class FoodDatabase:
                 return None
                 
             else:
-                print("Registros encontrados:\n")
-                retorno = "ID | Nome | Sabor | Preço | Tipo de comida | Região de origem | Disponibilidade | URL da imagem\n"
+                retorno = []
                 for x in myresult:
-                    retorno += str(x[0]) + " | " + x[1] + " | " + x[2] + " | " + str(x[3]) + " | " + x[4] + " | " + x[5] + " | " + "Disponível" if x[6] else "Indisponível" + " | " + x[7] + "\n"               
-           
+                    #retorno += str(x[0]) + " | " + x[1] + " | " + x[2] + " | " + str(x[3]) + " | " + x[4] + " | " + x[5] + " | " + "Disponível" if x[6] else "Indisponível" + " | " + x[7] + "\n"               
+                    retorno.append(x)
+                    
                 self.mydb.commit()  # Limpa o cursor
                 return retorno
             
@@ -367,19 +372,6 @@ class FoodDatabase:
             print("Erro ao buscar comida:", err)
             return None
 # Mostrar elementos
-    def show_table_TK(self):
-        try:
-            self.mycursor.execute("SELECT * FROM food_table")
-            myresult = self.mycursor.fetchall()
-            if len(myresult) == 0:
-                print("Nenhum registro retornado")
-                return None
-            else:
-                # Retorna os resultados como uma lista de tuplas
-                return myresult
-        except mysql.connector.Error as err:
-            print("Erro ao mostrar tabela:", err)
-            return None
 
     def show_table(self):
         if not self.TableAlreadyExists:
@@ -395,10 +387,11 @@ class FoodDatabase:
                     return None
                 else:
 
-                    retorno = "ID | Nome | Sabor | Preço | Tipo de comida | Região de origem | Disponibilidade | URL da imagem\n"
-                    for x in myresult:
-                        retorno += str(x[0]) + " | " + x[1] + " | " + x[2] + " | " + str(x[3]) + " | " + x[4] + " | " + x[5] + " | " + "Disponível" if x[6] else "Indisponível" + " | " + x[7] + "\n"               
-            
+                      retorno = []
+                for x in myresult:
+                    #retorno += str(x[0]) + " | " + x[1] + " | " + x[2] + " | " + str(x[3]) + " | " + x[4] + " | " + x[5] + " | " + "Disponível" if x[6] else "Indisponível" + " | " + x[7] + "\n"               
+                    retorno.append(x)
+                    
                     self.mydb.commit()  # Limpa o cursor
                     return retorno
             except mysql.connector.Error as err:
