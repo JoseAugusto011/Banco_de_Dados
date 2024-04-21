@@ -1,5 +1,10 @@
 import mysql.connector
 
+from collections import Counter
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
 
 class DatabaseFactory:
     def __init__(self, host, user, password, database):
@@ -399,7 +404,138 @@ class FoodDatabase:
             print("Erro ao listar ID's:", err)
 
 
-# Funções para o fim da execução
+# Funções de retorno de colunas
+
+    def return_column_Price(self):
+        retorno = []
+        self.mycursor.execute("SELECT price FROM food_table")
+        # Recupera os resultados da consulta
+        prices = self.mycursor.fetchall()
+        for price in prices:
+            retorno.append(price[0])  # Adiciona o preço à lista de retorno
+        return retorno
+
+    def return_column_boolean(self):
+        retorno = []
+        self.mycursor.execute("SELECT availability FROM food_table")
+        availabilities = self.mycursor.fetchall()
+        for availability in availabilities:
+            retorno.append(availability[0])
+        return retorno
+
+    def return_column_name(self):
+        retorno = []
+        self.mycursor.execute("SELECT name FROM food_table")
+        names = self.mycursor.fetchall()
+        for name in names:
+            retorno.append(name[0])
+        return retorno
+
+    def return_column_flavor(self):
+        retorno = []
+        self.mycursor.execute("SELECT flavor FROM food_table")
+        flavors = self.mycursor.fetchall()
+        for flavor in flavors:
+            retorno.append(flavor[0])
+        return retorno
+
+    def return_column_food_type(self):
+        retorno = []
+        self.mycursor.execute("SELECT food_type FROM food_table")
+        food_types = self.mycursor.fetchall()
+        for food_type in food_types:
+            retorno.append(food_type[0])
+        return retorno
+
+    def return_column_origin_region(self):
+        retorno = []
+        self.mycursor.execute("SELECT origin_region FROM food_table")
+        origin_regions = self.mycursor.fetchall()
+        for origin_region in origin_regions:
+            retorno.append(origin_region[0])
+        return retorno
+
+
+
+
+    # Relatórios e descrições da tabela        
+
+    def DescribeTable(self):
+        
+        if not self.TableAlreadyExists:
+            print("\nFalha ao Descrever - Tabela não existe")
+            return
+        else:
+            
+            """id INT AUTO_INCREMENT PRIMARY KEY,
+                            name VARCHAR(255),
+                            flavor VARCHAR(255),
+                            price FLOAT,
+                            food_type VARCHAR(255),
+                            origin_region VARCHAR(255),
+                            availability BOOLEAN,
+                            image_url VARCHAR(255)"""
+            
+            # Descrever informações: Qtd de elementos cadastrados, valor total das colunas numéricas, média dos valores das colunas numéricas, mediana, valor máximo e mínimo das colunas numéricas
+            
+            price  = self.return_column_Price()
+            boolean = self.return_column_boolean()
+            
+            ft = self.return_column_food_type()
+            regorg = self.return_column_origin_region()
+            name = self.return_column_name()
+            flavor = self.return_column_flavor()
+            
+            if len(price) == 0 or len(boolean) == 0 or len(ft) == 0 or len(regorg) == 0 or len(name) == 0 or len(flavor) == 0:
+                
+                print("Tabelas vagas - Não é possível descrever")       
+                return
+            
+            else:
+            
+                priceN = np.array(price)
+                booleaN = np.array(boolean)
+                
+                nameN = np.array(name)
+                ftN = np.array(ft)
+                regorgN = np.array(regorg)
+                flavorN = np.array(flavor)
+                
+                
+                
+                print("Relatório de Descrição da Tabela - Colunas Númericas\n\n")              
+                
+                print("Coluna Availability: \n")
+                print("QtdElementos| ValorTotal| Média| Mediana| ValorMáximo| ValorMínimo")
+                print(len(booleaN), "          |", np.sum(booleaN), "        |", np.mean(booleaN), "       |", np.median(booleaN), "         |", np.max(booleaN), "        |", np.min(booleaN))    
+                plt.hist(booleaN)  
+                    
+                print("\n\nColuna Price: ")
+                print("QtdElementos| Avaliaveis| NaoAvaliaveis| ProporcaoAvaliabilidade")
+                print(len(priceN), "         |", np.sum(priceN), "      |",len(priceN)-np.sum(priceN) , "     |", np.sum(priceN)/len(priceN))
+                plt.hist(priceN)
+                
+                print("\n\nRelatório de Descrição da Tabela - Colunas Categóricas\n\n")
+                
+                print("Coluna Name: ")
+                print("QtdElementos| ElementosUnicos| ElementosMaisFrequentes| FrequenciaElementosMaisFrequentes")
+                print(len(nameN), "     |", len(np.unique(nameN)), "            |", Counter(nameN).most_common(1)[0][0], "          |", Counter(nameN).most_common(1)[0][1])
+                
+                print("\n\nColuna Flavor: ")
+                print("QtdElementos| ElementosUnicos| ElementosMaisFrequentes| FrequenciaElementosMaisFrequentes")
+                print(len(flavorN), "       |", len(np.unique(flavorN)), "      |", Counter(flavorN).most_common(1)[0][0], "        |", Counter(flavorN).most_common(1)[0][1])
+                
+                
+                print("\n\nColuna FoodType: ")
+                print("QtdElementos| ElementosUnicos| ElementosMaisFrequentes| FrequenciaElementosMaisFrequentes")
+                print(len(ftN), "       |", len(np.unique(ftN)), "      |", Counter(ftN).most_common(1)[0][0], "            |", Counter(ftN).most_common(1)[0][1])
+                
+                print("\n\nColuna OriginRegion: ")
+                print("QtdElementos| ElementosUnicos| ElementosMaisFrequentes| FrequenciaElementosMaisFrequentes")
+                print(len(regorgN), "       |", len(np.unique(regorgN)), "      |", Counter(regorgN).most_common(1)[0][0], "            |", Counter(regorgN).most_common(1)[0][1])
+                
+    
+    # Funções para o fim da execução
 
     def clear_table(self):
         if not self.TableAlreadyExists:
@@ -434,8 +570,9 @@ class FoodDatabase:
         except mysql.connector.Error as err:
             print("Erro ao fechar conexão:", err)
 
-# Menu de opções --> Função principal (Substituir posteriormente por UI)
-
+    # Menu de opções --> Função principal (Substituir posteriormente por UI)
+    
+    
     def food_menu(self):
         opcao = -1
 
@@ -453,8 +590,9 @@ class FoodDatabase:
             print("11 - Buscar comida por preço entre")
             print("12 - Buscar comida por sabor")
             print("13 - Mostrar tabela")
-            print("14 - Limpar tabela")
-            print("15 - Apagar tabela")
+            print("14 - Descrever tabela")
+            print("15 - Limpar tabela")
+            print("16 - Apagar tabela")
             print("0 - Sair")
 
             opcao = int(input("\nDigite a opção desejada: "))
@@ -597,12 +735,16 @@ class FoodDatabase:
                 food_db.show_table()
 
             elif opcao == 14:
+                
+                food_db.DescribeTable()
+
+            elif opcao == 15:
                 print("\nTem certeza que deseja limpar os registros de toda a tabela? (s/n)")
                 confirmacao = input()
                 if confirmacao.lower() == 's':                
                     food_db.clear_table()
 
-            elif opcao == 15:
+            elif opcao == 16:
                 print("\nTem certeza que deseja apagar toda a tabela? (s/n)")
                 confirmacao = input()
                 if confirmacao.lower() == 's':
@@ -610,9 +752,11 @@ class FoodDatabase:
 
             elif opcao == 0:
                 print("\nEncerrando programa...")
+                food_db.close_connection()
 
             else:
                 print("\nOpção inválida. Por favor, digite novamente.")
+
 
 
 if __name__ == "__main__":
