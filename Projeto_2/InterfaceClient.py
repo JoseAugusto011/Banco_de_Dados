@@ -5,6 +5,8 @@ from backEndFinal import Database, PratoTipico, Cliente, Venda, ItemVenda
 
 class Interface:
     def __init__(self, root):
+        self.produto_selecionado_idx = None 
+        self.cliente_logado = None  # Adicionando atributo para armazenar informações do cliente logado
         self.root = root
         self.root.title("Sistema de Vendas de Pratos Típicos")
         self.root.geometry("400x300")
@@ -12,15 +14,15 @@ class Interface:
         self.db = Database("localhost", "root", "jasbhisto", "food_db")
 
         self.frame_inicio = tk.Frame(self.root)
-        self.frame_inicio.pack()
-
         self.frame_cadastro_login = tk.Frame(self.root)
-
         self.frame_lista_produtos = tk.Frame(self.root)
-
         self.frame_compra = tk.Frame(self.root)
 
         self.mostrar_tela_inicio()
+        
+    def selecionar_produto(self, idx):
+        self.produto_selecionado_idx = idx
+        self.mostrar_tela_compra(idx)
 
     def mostrar_tela_inicio(self):
         # Limpar os widgets do frame de início, se houver algum
@@ -105,16 +107,13 @@ class Interface:
             messagebox.showerror("Erro", "Erro ao cadastrar cliente!")
         else:
             messagebox.showinfo("Cadastro", "Cadastro realizado com sucesso!")
-            #self.frame_cadastro_login.pack_forget()  # Desempacotar o frame de cadastro
             self.mostrar_tela_inicio()  # Chamar o método para mostrar a tela inicial
 
 
     def mostrar_tela_login(self):
-        # Limpar os widgets do frame de login, se houver algum
         for widget in self.frame_cadastro_login.winfo_children():
             widget.destroy()
 
-        # Desempacotar outros frames, se estiverem visíveis
         self.frame_inicio.pack_forget()
         self.frame_lista_produtos.pack_forget()
         self.frame_compra.pack_forget()
@@ -125,7 +124,7 @@ class Interface:
         self.entry_email_login = tk.Entry(self.frame_cadastro_login)
         self.entry_email_login.grid(row=1, column=0, columnspan=2, padx=5, pady=5)
 
-        btn_login = tk.Button(self.frame_cadastro_login, text="Login", command=app.efetuar_login)  # Corrigido aqui
+        btn_login = tk.Button(self.frame_cadastro_login, text="Login", command=self.efetuar_login)
         btn_login.grid(row=2, column=0, pady=5)
 
         btn_voltar = tk.Button(self.frame_cadastro_login, text="Voltar", command=self.mostrar_tela_inicio)
@@ -135,35 +134,46 @@ class Interface:
 
 
     def mostrar_tela_lista_produtos(self):
-        self.frame_lista_produtos.pack_forget()
+        frame_scroll = tk.Frame(self.root)
+        frame_scroll.pack(fill=tk.BOTH, expand=True)
 
-        self.frame_lista_produtos = tk.Frame(self.root)
-        self.frame_lista_produtos.pack()
+        canvas = tk.Canvas(frame_scroll)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        label_lista_produtos = tk.Label(self.frame_lista_produtos, text="Lista de Produtos")
+        scrollbar = tk.Scrollbar(frame_scroll, orient=tk.VERTICAL, command=canvas.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        frame_lista_produtos = tk.Frame(canvas)
+        canvas.create_window((0, 0), window=frame_lista_produtos, anchor=tk.NW)
+
+        label_lista_produtos = tk.Label(frame_lista_produtos, text="Lista de Produtos")
         label_lista_produtos.grid(row=0, column=0, columnspan=2, pady=10)
-        
-    
 
         produtos = PratoTipico.listar_todos(self.db)
-        
-        print(produtos)
+
         for idx, produto in enumerate(produtos):
             nome_produto = produto[1]
             descricao_produto = produto[2]
             preco_produto = produto[3]
 
-            label_nome_produto = tk.Label(self.frame_lista_produtos, text=nome_produto)
-            label_nome_produto.grid(row=idx+1, column=0, padx=5, pady=5)
+            label_nome_produto = tk.Label(frame_lista_produtos, text=nome_produto)
+            label_nome_produto.grid(row=idx + 1, column=0, padx=5, pady=5)
 
-            label_descricao_produto = tk.Label(self.frame_lista_produtos, text=descricao_produto)
-            label_descricao_produto.grid(row=idx+1, column=1, padx=5, pady=5)
+            label_descricao_produto = tk.Label(frame_lista_produtos, text=descricao_produto)
+            label_descricao_produto.grid(row=idx + 1, column=1, padx=5, pady=5)
 
-            label_preco_produto = tk.Label(self.frame_lista_produtos, text=f"Preço: R${preco_produto:.2f}")
-            label_preco_produto.grid(row=idx+1, column=2, padx=5, pady=5)
+            label_preco_produto = tk.Label(frame_lista_produtos, text=f"Preço: R${preco_produto:.2f}")
+            label_preco_produto.grid(row=idx + 1, column=2, padx=5, pady=5)
 
-            btn_comprar = tk.Button(self.frame_lista_produtos, text="Comprar", command=lambda idx=idx: self.mostrar_tela_compra(idx))
-            btn_comprar.grid(row=idx+1, column=3, padx=5, pady=5)
+            btn_comprar = tk.Button(frame_lista_produtos, text="Comprar", command=lambda idx=idx: self.mostrar_tela_compra(idx))
+            btn_comprar.grid(row=idx + 1, column=3, padx=5, pady=5)
+
+        frame_lista_produtos.update_idletasks()
+        canvas.config(scrollregion=canvas.bbox(tk.ALL))
+
+
 
     def mostrar_tela_compra(self, idx_produto):
         self.frame_lista_produtos.pack_forget()
@@ -194,30 +204,19 @@ class Interface:
         btn_voltar.grid(row=5, column=0, columnspan=2)
     
     def efetuar_compra(self):
-        
         quantidade = int(self.entry_quantidade.get())
 
-        produtos = PratoTipico.listar_todos(self.db)
-
-        if not produtos:
-            messagebox.showerror("Erro", "Não há produtos disponíveis.")
+        if quantidade <= 0:
+            messagebox.showerror("Erro", "Quantidade inválida.")
             return
 
-        produto_selecionado = produtos[0]  # Selecionando o primeiro produto por padrão
+        produto_selecionado = PratoTipico.listar_todos(self.db)[self.produto_selecionado_idx]
         preco_produto = produto_selecionado[3]
-
-        # Verificando se o cliente digitou um índice válido
-        try:
-            idx_produto = int(simpledialog.askstring("Selecionar Produto", "Digite o índice do produto que deseja comprar:"))
-            if idx_produto < 0 or idx_produto >= len(produtos):
-                raise ValueError
-            produto_selecionado = produtos[idx_produto]
-            preco_produto = produto_selecionado[3]
-        except (ValueError, TypeError):
-            messagebox.showerror("Erro", "Índice inválido.")
-            return
-
         preco_total = quantidade * preco_produto
+
+        if self.cliente_logado is None:
+            messagebox.showerror("Erro", "Nenhum cliente logado.")
+            return
 
         venda = Venda(self.cliente_logado.id_cliente, preco_total)
         venda.inserir(self.db)
@@ -230,12 +229,11 @@ class Interface:
     def efetuar_login(self):
         email = self.entry_email_login.get()
 
-        # Verificar se o email está na tabela de clientes
         cliente = Cliente.pesquisar_por_email(self.db, email)
         
         if cliente is not None:
+            self.cliente_logado = cliente
             messagebox.showinfo("Login", "Login efetuado com sucesso! Bem-vindo!")
-            # Após o login bem-sucedido, chame a próxima tela
             self.mostrar_tela_lista_produtos()
         else:
             messagebox.showerror("Login", "Email não encontrado!")
