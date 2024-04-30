@@ -579,7 +579,6 @@ def main():
     prato1.inserir()
     prato2 = PratoTipico(db, "Churrasco", 'Prato tipico brasileiro', 40.00, 'Principal', 'Sul', True, 20)
     prato2.inserir()
-<<<<<<< HEAD
 
     prato3 = PratoTipico(db, "Tacos", "Prato típico mexicano", 35.00, "Principal", "México", True, 15)
     prato3.inserir()
@@ -609,10 +608,6 @@ def main():
     print("Listando todas as comidas típicas após as inserções:")
     print(PratoTipico.listar_todos(db))
 
-=======
-    prato3 = PratoTipico(db, "Acarajé", 'Prato típico baiano', 20.00, 'Principal', 'Nordeste', True, 15)
-    prato3.inserir()
->>>>>>> fd1367fd92c1e102f2bf20a6d857cc82bad283dc
     
     print("\ninserindo cliente...")
     # Criar um cliente
