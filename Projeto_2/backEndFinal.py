@@ -1,4 +1,5 @@
 import mysql.connector
+from datetime import datetime
 
 class Database:
     def __init__(self, host, user, password, database):
@@ -12,6 +13,8 @@ class Database:
 
     def create_tables(self):
         # Tabela PratoTipico
+        
+        print("Criando tabelas...")
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS PratoTipico (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -26,7 +29,7 @@ class Database:
         """)
 
        
-
+        print("Tabelas prato típico criada com sucesso!")
         # Tabela Cliente
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS Cliente (
@@ -39,30 +42,34 @@ class Database:
                 cidade VARCHAR(100)
             )
         """)
+        print("Tabela cliente criada com sucesso!")
 
-        # Tabela ItemVenda
-        self.cursor.execute("""
-            CREATE TABLE IF NOT EXISTS ItemVenda (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                pratoTipico_id INT,
-                quantidade INT,
-                valorUnitario FLOAT,
-                FOREIGN KEY (pratoTipico_id) REFERENCES PratoTipico(id)
-            )
-        """)
-
+        
         # Tabela Venda
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS Venda (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 cliente_id INT,
-                vendedor VARCHAR(255),
                 formaPagamento VARCHAR(50),
                 statusPagamento VARCHAR(50),
                 data DATE,
                 FOREIGN KEY (cliente_id) REFERENCES Cliente(id)
             )
         """)
+        print("Tabela venda criada com sucesso!")
+        
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS ItemVenda (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            venda_id INT,
+            pratoTipico_id INT,
+            quantidade INT,
+            valorUnitario FLOAT,
+            FOREIGN KEY (venda_id) REFERENCES Venda(id),
+            FOREIGN KEY (pratoTipico_id) REFERENCES PratoTipico(id)
+                )
+            """)
+        print("Tabela ItemVenda criada com sucesso!")
 
     def adicionar_stored_procedure(self):
         try:
@@ -102,7 +109,7 @@ class Database:
         self.conn.close()
 
 class PratoTipico:
-    def __init__(self, db, nome, descricao, preco, categoria, regiaoOrigem, disponibilidade=True, quantidade=0):
+    def __init__(self, db, nome, descricao, preco, categoria, regiaoOrigem, disponibilidade=False, quantidade=0):
         self.db = db
         self.nome = nome
         self.descricao = descricao
@@ -432,7 +439,17 @@ class Cliente:
         except Exception as e:
             print(e)
             return None
+    @staticmethod
+    def listar_por_id(db, id):
+        try:
+            query = "SELECT * FROM Cliente WHERE id = %s"
+            db.cursor.execute(query, (id,))
+            return db.cursor.fetchall()
+        except Exception as e:
+            print(e)
+            return None
 
+        
     @staticmethod
     def remover(db, cliente_id):
         try:
@@ -444,42 +461,75 @@ class Cliente:
             return None
 
 class Venda:
-    def __init__(self, db, cliente_id, vendedor, formaPagamento, statusPagamento, data):
+    def __init__(self, db, cliente_id, formaPagamento, statusPagamento, data):
         self.db = db
         self.cliente_id = cliente_id
-        self.vendedor = vendedor
         self.formaPagamento = formaPagamento
         self.statusPagamento = statusPagamento
         self.data = data
 
     def inserir(self):
-        query = "INSERT INTO Venda (cliente_id, vendedor, formaPagamento, statusPagamento, data) VALUES (%s, %s, %s, %s, %s)"
-        values = (self.cliente_id, self.vendedor, self.formaPagamento, self.statusPagamento, self.data)
-        self.db.cursor.execute(query, values)
-        self.db.conn.commit()
-
-    @staticmethod
-    def listar_todas(db):
         try:
-            query = "SELECT * FROM Venda"
-            db.cursor.execute(query)
-            return db.cursor.fetchall()
+            # Insere a venda no banco de dados
+            query = "INSERT INTO Venda (cliente_id, formaPagamento, statusPagamento, data) VALUES (%s, %s, %s, %s)"
+            values = (self.cliente_id, self.formaPagamento, self.statusPagamento, self.data)
+            self.db.cursor.execute(query, values)
+            venda_id = self.db.cursor.lastrowid  # Obtém o ID da venda inserida
+            self.db.conn.commit()
+
+            # Aplica desconto se o cliente for elegível
+            cliente = Cliente.listar_por_id(self.db, self.cliente_id)
+            if cliente:
+                cliente = cliente[0]
+                if cliente['torceFlamengo'] or cliente['assisteOnePiece'] or cliente['cidade'] == 'Sousa':
+                    # Aplica um desconto de 10% na venda
+                    desconto = 0.1
+                    self.aplicar_desconto(venda_id, desconto)
+
+            print("Venda registrada com sucesso!")
         except Exception as e:
-            print(e)
-            return None
+            print("Erro ao registrar a venda:", e)
+
+
 
 class ItemVenda:
-    def __init__(self, db, pratoTipico_id, quantidade, valorUnitario):
+    
+    def __init__(self, db, venda_id, pratoTipico_id, quantidade, valorUnitario):
         self.db = db
+        self.venda_id = venda_id
         self.pratoTipico_id = pratoTipico_id
         self.quantidade = quantidade
         self.valorUnitario = valorUnitario
 
     def inserir(self):
-        query = "INSERT INTO ItemVenda (pratoTipico_id, quantidade, valorUnitario) VALUES (%s, %s, %s)"
-        values = (self.pratoTipico_id, self.quantidade, self.valorUnitario)
-        self.db.cursor.execute(query, values)
-        self.db.conn.commit()
+        try:
+            # Verifica se o produto está disponível
+            if self.verificar_disponibilidade():
+                # Insere o item de venda no banco de dados
+                query = "INSERT INTO ItemVenda (venda_id, pratoTipico_id, quantidade, valorUnitario) VALUES (%s, %s, %s, %s)"
+                values = (self.venda_id, self.pratoTipico_id, self.quantidade, self.valorUnitario)
+                self.db.cursor.execute(query, values)
+                self.db.conn.commit()
+                print("Item de venda registrado com sucesso!")
+            else:
+                print("O produto não está disponível no estoque. Item de venda não registrado.")
+        except Exception as e:
+            print("Erro ao registrar o item de venda:", e)
+
+    def verificar_disponibilidade(self):
+        try:
+            # Verifica se o produto associado ao item de venda está disponível no estoque
+            query = "SELECT disponibilidade FROM PratoTipico WHERE id = %s"
+            self.db.cursor.execute(query, (self.pratoTipico_id,))
+            disponibilidade = self.db.cursor.fetchone()
+            if disponibilidade and disponibilidade[0]:  # Verifica se a disponibilidade é True
+                return True
+            else:
+                return False
+        except Exception as e:
+            print("Erro ao verificar disponibilidade do produto:", e)
+            return False
+
 
     @staticmethod
     def listar_todos(db):
@@ -506,26 +556,54 @@ def main():
     # Conectar ao banco de dados
     db = Database(host, user, password, database)
 
+    print("Conectado ao banco de dados!")
     # Criar as tabelas
     db.create_tables()
 
     # Adicionar a stored procedure
     db.adicionar_stored_procedure()
-
+    
+    print("Inserindo dados...")
     # Inserir os pratos típicos
     prato1 = PratoTipico(db, "Feijoada", 'Prato tipico brasileiro', 50.00, 'Principal', 'Sudeste', True, 10)
     prato1.inserir()
-
     prato2 = PratoTipico(db, "Churrasco", 'Prato tipico brasileiro', 40.00, 'Principal', 'Sul', True, 20)
     prato2.inserir()
-
-    # Listar todos os pratos típicos após as inserções
-    print("Listando todas as comidas típicas após as inserções:")
-    print(PratoTipico.listar_todos(db))
-
+    prato3 = PratoTipico(db, "Acarajé", 'Prato típico baiano', 20.00, 'Principal', 'Nordeste', True, 15)
+    prato3.inserir()
     
-    # Listar todos os pratos tipicos
-    PratoTipico.listar_todos(db)
+    print("\ninserindo cliente...")
+    # Criar um cliente
+    cliente1 = Cliente(db, "João", "joao@email.com", "123456789", True, False, "Rio de Janeiro")
+    cliente1.inserir()
+    print("\nAdicionando ao carrinho...")
+    # Realizar uma compra de 2 produtos
+    
+    print("\nListando todos os clientes:")
+    clientes = Cliente.listar_todos(db)
+    print(clientes)
+
+    # Selecionando o ID do primeiro cliente da lista (índice 0)
+    cliente_id = clientes[0][0]
+
+    print("\nCliente selecionado:")
+    print(cliente_id)
+
+    # Criando a data no formato correto
+    data = datetime.strptime("2024-04-29", "%Y-%m-%d")
+
+    # Criando a venda com o ID do cliente selecionado e a data correta
+    venda = Venda(db, cliente_id, "Cartão de Crédito", "Pago", data)
+    venda.inserir()
+
+
+
+    # # Listar todos os itens de venda após a compra
+    # print("\nListando todos os itens de venda após a compra:")
+    # itens = ItemVenda.listar_todos(db)
+    
+    # for item in itens:
+    #     print(item)
 
     # Fechar conexão com o banco de dados
     db.close_connection()
