@@ -1,6 +1,6 @@
 import mysql.connector
 from decimal import Decimal
-
+import matplotlib.pyplot as plt
 
 class Database:
     def __init__(self, host, user, password, database):
@@ -126,8 +126,43 @@ class EstoqueManager:
         finally:
             cursor.close()
         return result
-
-
+    
+    def pesquisar_nome(self, name):
+        query = "SELECT * FROM Estoque WHERE nome = %s"
+        self.db.cursor.execute(query, (name,))
+        self.db.connection.commit()
+        
+    def pesquisar_categoria(self, categoria):
+        query = "SELECT * FROM Estoque WHERE categoria = %s"
+        self.db.cursor.execute(query, (categoria,))
+        self.db.connection.commit()
+        
+    def pesquisar_regiao_origem(self, regiaoOrigem):
+        query = "SELECT * FROM Estoque WHERE regiaoOrigem = %s"
+        self.db.cursor.execute(query, (regiaoOrigem,))
+        self.db.connection.commit()
+        
+    def pesquisar_disponibilidade(self, disponibilidade):
+        
+        query = "SELECT * FROM Estoque WHERE disponibilidade = %s"
+        self.db.cursor.execute(query, (disponibilidade,))
+        self.db.connection.commit()
+        
+    def pesquisar_intervalo_preco(self, preco_min, preco_max):
+        query = "SELECT * FROM Estoque WHERE preco >= %s AND preco <= %s"
+        self.db.cursor.execute(query, (preco_min, preco_max))
+        self.db.connection.commit()
+        
+    def pesquisar_intervalo_quantidade(self, quantidade_min, quantidade_max):
+        query = "SELECT * FROM Estoque WHERE quantidade >= %s AND quantidade <= %s"
+        self.db.cursor.execute(query, (quantidade_min, quantidade_max))
+        self.db.connection.commit()
+        
+    def pesquisar_por_nao_disponibilidade(self):
+        
+        query = "SELECT * FROM Estoque WHERE disponibilidade = False"
+        self.db.cursor.execute(query)
+        self.db.connection.commit()
 
     def listar_todos(self):
         query = "SELECT * FROM Estoque"
@@ -191,11 +226,32 @@ class ClienteManager:
         query = "UPDATE Cliente SET cidade = %s WHERE id = %s"
         self.db.cursor.execute(query, (cidade, id))
         self.db.connection.commit()
-
+        
+    def pesquisar_por_nome(self, nome):
+        query = "SELECT * FROM Cliente WHERE nome = %s"
+        self.db.cursor.execute(query, (nome,))
+        return self.db.cursor.fetchall()
+    
+    def pesquisar_por_email_login(self, email_login):
+        query = "SELECT * FROM Cliente WHERE email_login = %s"
+        self.db.cursor.execute(query, (email_login,))
+        return self.db.cursor.fetchall()
+    
+    def Verificar_login(self, email_login, senha_login):
+        
+        query = "SELECT * FROM Cliente WHERE email_login = %s AND senha_login = %s"
+        self.db.cursor.execute(query, (email_login, senha_login))
+        return self.db.cursor.fetchall()
+    
+    
+        
+        
     def listar_todos(self):
         query = "SELECT * FROM Cliente"
         self.db.cursor.execute(query)
         return self.db.cursor.fetchall()
+    
+
 
     def criar_view_sousa_onepiece_flamengo(self):
         query = """
@@ -269,6 +325,27 @@ class VendaManager:
 
     def listar_todas(self):
         query = "SELECT * FROM Venda"
+        self.db.cursor.execute(query)
+        return self.db.cursor.fetchall()
+    
+    def pesquisar_produtos_comprados_entre_datas(self, data_inicial, data_final):
+        query = """
+        SELECT ItemVenda.id_produto, SUM(ItemVenda.quantidade) AS total_vendido
+        FROM ItemVenda INNER JOIN Venda ON ItemVenda.id_venda = Venda.id
+        WHERE Venda.data_venda BETWEEN %s AND %s
+        GROUP BY ItemVenda.id_produto
+        ORDER BY total_vendido DESC
+        """
+        self.db.cursor.execute(query, (data_inicial, data_final))
+        return self.db.cursor.fetchall()
+    
+    def listar_vendas_por_cliente(self, id_cliente):
+        query = "SELECT * FROM Venda WHERE id_cliente = %s"
+        self.db.cursor.execute(query, (id_cliente,))
+        return self.db.cursor.fetchall()
+    
+    def contagem_vendas_por_tipo_pagamento(self):
+        query = "SELECT forma_pagamento, COUNT(*) FROM Venda GROUP BY forma_pagamento"
         self.db.cursor.execute(query)
         return self.db.cursor.fetchall()
 
