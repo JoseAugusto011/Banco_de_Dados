@@ -460,13 +460,71 @@ class Cliente:
             print(e)
             return None
 
+# class Venda:
+#     def __init__(self, db, cliente_id, formaPagamento, statusPagamento, data):
+#         self.db = db
+#         self.cliente_id = cliente_id
+#         self.formaPagamento = formaPagamento
+#         self.statusPagamento = statusPagamento
+#         self.data = data           
+            
+
+#     def inserir(self):
+#         try:
+#             # Insere a venda no banco de dados
+#             query = "INSERT INTO Venda (cliente_id, formaPagamento, statusPagamento, data) VALUES (%s, %s, %s, %s)"
+#             values = (self.cliente_id, self.formaPagamento, self.statusPagamento, self.data)
+#             self.db.cursor.execute(query, values)
+#             venda_id = self.db.cursor.lastrowid  # Obtém o ID da venda inserida
+#             self.db.conn.commit()
+
+#             # Aplica desconto se o cliente for elegível
+#             cliente = Cliente.listar_por_id(self.db, self.cliente_id)
+#             if cliente:
+#                 cliente = cliente[0]
+#                 if cliente[4] or (cliente[5] and cliente[6] == 'Sousa'):  # Ajuste na lógica de comparação
+#                     self.aplicar_desconto(venda_id, 0.1)
+
+#             print("Venda registrada com sucesso!")
+#         except Exception as e:
+#             print("Erro ao registrar a venda:", e)
+
+#     def aplicar_desconto(self, venda_id, desconto):
+#         try:
+#             # Consulta SQL para obter o total da venda
+#             query = """
+#                 SELECT SUM(iv.quantidade * pt.preco) AS total
+#                 FROM ItemVenda iv
+#                 INNER JOIN PratoTipico pt ON iv.pratoTipico_id = pt.id
+#                 WHERE iv.venda_id = %s
+#             """
+#             self.db.cursor.execute(query, (venda_id,))
+#             total_venda = self.db.cursor.fetchone()
+
+#             # Verifica se o total da venda é válido antes de aplicar o desconto
+#             if total_venda and total_venda[0] is not None:
+#                 total_venda = total_venda[0]
+#                 valor_desconto = total_venda * desconto
+#                 total_com_desconto = total_venda - valor_desconto
+
+#                 # Atualiza o total da venda com o desconto aplicado
+#                 query_update = "UPDATE Venda SET total = %s WHERE id = %s"
+#                 self.db.cursor.execute(query_update, (total_com_desconto, venda_id))
+#                 self.db.conn.commit()
+
+#                 print("Desconto aplicado com sucesso!")
+#             else:
+#                 print("Erro ao aplicar desconto: total da venda inválido")
+#         except Exception as e:
+#             print("Erro ao aplicar desconto:", e)
+
 class Venda:
     def __init__(self, db, cliente_id, formaPagamento, statusPagamento, data):
         self.db = db
         self.cliente_id = cliente_id
         self.formaPagamento = formaPagamento
         self.statusPagamento = statusPagamento
-        self.data = data
+        self.data = data           
 
     def inserir(self):
         try:
@@ -477,18 +535,38 @@ class Venda:
             venda_id = self.db.cursor.lastrowid  # Obtém o ID da venda inserida
             self.db.conn.commit()
 
-            # Aplica desconto se o cliente for elegível
-            cliente = Cliente.listar_por_id(self.db, self.cliente_id)
-            if cliente:
-                cliente = cliente[0]
-                if cliente['torceFlamengo'] or cliente['assisteOnePiece'] or cliente['cidade'] == 'Sousa':
-                    # Aplica um desconto de 10% na venda
-                    desconto = 0.1
-                    self.aplicar_desconto(venda_id, desconto)
+            # Calcular o valor total da venda
+            total_venda = self.calcular_total_venda(venda_id)
+            print("Total da venda:", total_venda)
+            print("venda_id:", venda_id)
 
             print("Venda registrada com sucesso!")
         except Exception as e:
             print("Erro ao registrar a venda:", e)
+
+    def calcular_total_venda(self, venda_id):
+        try:
+            # Consulta SQL para calcular o total da venda
+            query = """
+                SELECT SUM(iv.quantidade * pt.preco) AS total
+                FROM ItemVenda iv
+                INNER JOIN PratoTipico pt ON iv.pratoTipico_id = pt.id
+                WHERE iv.venda_id = %s
+            """
+            self.db.cursor.execute(query, (venda_id,))
+            total_venda = self.db.cursor.fetchone()
+
+            # Retorna o total da venda se encontrado
+            if total_venda and total_venda[0] is not None:
+                return total_venda[0]
+            else:
+                return 0
+        except Exception as e:
+            print("Erro ao calcular o total da venda:", e)
+            return 0
+
+
+
 
 
 
