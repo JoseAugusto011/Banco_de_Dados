@@ -1,4 +1,5 @@
 import tkinter as tk
+import decimal
 from tkinter import ttk
 from tkinter import messagebox
 from backEndFinal import Database, EstoqueManager, ClienteManager
@@ -7,13 +8,17 @@ class ListaPratosWindow:
     def __init__(self, master, db):
         self.master = master
         self.db = db
+        self.cliente_id = None  # Inicializa o ID do cliente como None
         self.master.title("Lista de Pratos Típicos")
         self.master.state('zoomed')  
 
         self.create_widgets()
 
     def create_widgets(self):
-        self.table_frame = tk.Frame(self.master)
+        self.prato_frame = tk.Frame(self.master)
+        self.prato_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        self.table_frame = tk.Frame(self.prato_frame)
         self.table_frame.pack(expand=True, fill=tk.BOTH)
 
         self.table = ttk.Treeview(self.table_frame)
@@ -41,11 +46,11 @@ class ListaPratosWindow:
         self.atualizar_lista_pratos()
 
         # Botões
-        self.btn_cadastro = tk.Button(self.master, text="Cadastro", command=self.abrir_cadastro, bg="red", fg="black")
-        self.btn_cadastro.place(relx=0.85, rely=0.95, anchor=tk.CENTER)
+        self.btn_cadastro = tk.Button(self.prato_frame, text="Cadastro", command=self.abrir_cadastro, bg="red", fg="black")
+        self.btn_cadastro.pack(anchor=tk.E)
 
-        self.btn_login = tk.Button(self.master, text="Login", command=self.abrir_login, bg="red", fg="black")
-        self.btn_login.place(relx=0.95, rely=0.95, anchor=tk.CENTER)
+        self.btn_login = tk.Button(self.prato_frame, text="Login", command=self.abrir_login, bg="red", fg="black")
+        self.btn_login.pack(anchor=tk.E)
 
         # Variáveis de entrada e botões
         self.nome_entry = None
@@ -55,16 +60,21 @@ class ListaPratosWindow:
         self.torcedor_var = None
         self.assistir_var = None
 
+        # Frame para o sistema de compra
+        self.compra_frame = tk.Frame(self.master)
+        self.compra_frame.pack(side=tk.RIGHT, fill=tk.Y)
+
     def atualizar_lista_pratos(self):
         self.table.delete(*self.table.get_children())
         estoque_manager = EstoqueManager(self.db)
-        pratos = estoque_manager.listar_todos()
-        if pratos:
-            for prato in pratos:
+        self.pratos = estoque_manager.listar_todos()
+        if self.pratos:
+            for prato in self.pratos:
                 disponibilidade = "Disponível" if prato[6] else "Indisponível"
                 self.table.insert("", "end", values=(prato[1], prato[2], prato[3], prato[4], prato[5], disponibilidade, prato[7]))
-        else:
-            self.table.insert("", "end", values=("Nenhum prato típico encontrado", "", "", "", "", "", ""))
+                # Diminuir o tamanho da fonte do nome do prato
+                self.table.tag_configure("small", font=("TkDefaultFont", 8))
+                self.table.item(self.table.selection(), tags=("small",))  # Aplica o estilo de fonte ao item
 
     def abrir_cadastro(self):
         self.cadastro_window = tk.Toplevel(self.master)
@@ -120,7 +130,6 @@ class ListaPratosWindow:
         else:
             messagebox.showerror("Erro", "Preencha todos os campos!")
 
-
     def abrir_login(self):
         self.login_window = tk.Toplevel(self.master)
         self.login_window.title("Login de Cliente")
@@ -143,15 +152,103 @@ class ListaPratosWindow:
 
         if email_login and senha_login:
             cliente_manager = ClienteManager(self.db)
-            result = cliente_manager.Verificar_login(email_login, senha_login)
-            if result:
+            # Verifica o login e obtém o ID do cliente
+            self.cliente_id = cliente_manager.Verificar_login(email_login, senha_login)
+            if self.cliente_id:
                 messagebox.showinfo("Sucesso", "Login realizado com sucesso!")
                 self.login_window.destroy()
-                # Aqui você pode adicionar o código para redirecionar ou atualizar a interface após o login
+                self.abrir_sistema_de_compra()
             else:
                 messagebox.showerror("Erro", "E-mail ou senha incorretos.")
         else:
             messagebox.showerror("Erro", "Preencha todos os campos!")
+
+    def abrir_sistema_de_compra(self):
+        # Limpa o frame de compra antes de adicionar novos elementos
+        for widget in self.compra_frame.winfo_children():
+            widget.destroy()
+
+        # Adicione os controles para seleção de quantidade ao lado de cada item
+        self.quantidade_entries = []
+        for prato in self.pratos:
+            label = tk.Label(self.compra_frame, text=prato[1], font=("TkDefaultFont", 7))  # Reduz a fonte do nome do prato
+            label.pack()
+            quantidade_entry = tk.Entry(self.compra_frame, font=("TkDefaultFont", 7))  # Reduz a fonte da entrada de quantidade
+            quantidade_entry.pack()
+            self.quantidade_entries.append(quantidade_entry)
+
+        # Adicione um botão para finalizar a compra
+        tk.Button(self.compra_frame, text="Finalizar Compra", command=self.finalizar_compra).pack()
+
+    def finalizar_compra(self):
+        itens_selecionados = []  # Lista para armazenar os itens selecionados e suas quantidades
+        total_pago_sem_desconto = 0  # Variável para armazenar o total a ser pago sem desconto
+        total_pago = 0  # Variável para armazenar o total a ser pago
+        desconto_aplicado = False  # Variável para rastrear se o desconto foi aplicado
+        erro = False  # Variável para rastrear se houve algum erro
+
+        # Processar os itens selecionados e calcular o total a ser pago sem desconto
+        for i, prato in enumerate(self.pratos):
+            quantidade_texto = self.quantidade_entries[i].get()
+            if quantidade_texto:
+                try:
+                    quantidade = int(quantidade_texto)
+                    if quantidade < 0:
+                        erro = True
+                        messagebox.showerror("Erro", f"Quantidade inválida para {prato[1]}: {quantidade_texto}")
+                    elif quantidade > prato[7]:
+                        erro = True
+                        messagebox.showerror("Erro", f"Quantidade de {prato[1]} excede o estoque disponível.")
+                    else:
+                        preco_unitario = float(prato[3])  # Convertendo para float
+                        total_pago_sem_desconto_item = quantidade * preco_unitario
+                        total_pago_sem_desconto += total_pago_sem_desconto_item  # Adiciona o valor total do item ao total geral sem desconto
+
+                        # Armazena o nome do prato, quantidade e total do item sem desconto
+                        itens_selecionados.append((prato[1], quantidade, total_pago_sem_desconto_item))
+
+                        # Verifica se o cliente atende a alguma das condições para desconto
+                        if self.cliente_id:  # Verifica se o cliente está logado
+                            cliente_manager = ClienteManager(self.db)
+                            if cliente_manager.cliente_torce_para_flamengo(self.cliente_id) or cliente_manager.cliente_assiste_one_piece(self.cliente_id) or cliente_manager.cliente_eh_de_sousa(self.cliente_id):
+                                desconto_aplicado = True  # Indica que o desconto será aplicado
+                except ValueError:
+                    erro = True
+                    messagebox.showerror("Erro", f"Número de itens inválido para {prato[1]}: {quantidade_texto}")
+
+        # Aplicar o desconto se aplicável
+        if desconto_aplicado:
+            total_pago = total_pago_sem_desconto * 0.9  # Aplica o desconto de 10%
+        else:
+            total_pago = total_pago_sem_desconto  # Mantém o total sem desconto se nenhum desconto for aplicado
+
+        # Se não houve erros, exibir os itens selecionados, o total sem desconto e o total com desconto
+        if not erro:
+            # Criar uma janela pop-up para exibir os itens selecionados e a forma de pagamento
+            popup = tk.Toplevel()
+            popup.title("Itens Selecionados")
+
+            mensagem = "Você selecionou os seguintes itens:\n"
+            for item in itens_selecionados:
+                mensagem += f"{item[1]} unidades de {item[0]} - Total sem desconto: R${item[2]:.2f}\n"
+            mensagem += f"\nTotal sem desconto: R${total_pago_sem_desconto:.2f}\n"
+            mensagem += f"Total a ser pago (com desconto, caso tenha vai ser de 10%): R${total_pago:.2f}\n"
+
+            # Exibir mensagem
+            tk.Label(popup, text=mensagem).pack()
+
+            # Adicionar opções de pagamento
+            tk.Label(popup, text="Selecione a forma de pagamento:").pack()
+            opcao_pagamento = tk.StringVar()
+            opcao_pagamento.set("Pix")  # Opção padrão
+            tk.OptionMenu(popup, opcao_pagamento, "Pix", "Boleto", "Cartão", "Berries").pack()
+
+            tk.Button(popup, text="Confirmar Pagamento", command=popup.destroy).pack()
+
+        # Limpar a lista de itens selecionados
+        itens_selecionados.clear()
+
+
 
 
 def main():

@@ -246,6 +246,11 @@ class ClienteManager:
         query = "UPDATE Cliente SET cidade = %s WHERE id = %s"
         self.db.cursor.execute(query, (cidade, id))
         self.db.connection.commit()
+    
+    def pesquisar_por_id(self, id):
+        query = "SELECT * FROM Cliente WHERE id = %s"
+        self.db.cursor.execute(query, (id,))
+        return self.db.cursor.fetchall()
         
     def pesquisar_por_nome(self, nome):
         query = "SELECT * FROM Cliente WHERE nome = %s"
@@ -258,12 +263,55 @@ class ClienteManager:
         return self.db.cursor.fetchall()
     
     def Verificar_login(self, email_login, senha_login):
-        
-        query = "SELECT * FROM Cliente WHERE email_login = %s AND senha_login = %s"
+        query = "SELECT id FROM Cliente WHERE email_login = %s AND senha_login = %s"
         self.db.cursor.execute(query, (email_login, senha_login))
-        return self.db.cursor.fetchall()
+        result = self.db.cursor.fetchone()  # Obtém apenas a primeira linha do resultado
+        if result:
+            return result[0]  # Retorna o ID do cliente se a consulta retornar algum resultado
+        else:
+            return None  # Retorna None se não houver correspondência para as credenciais fornecidas
+
     
-    
+    def obter_cliente_por_id(self, id):
+        query = "SELECT * FROM Cliente WHERE id = %s"
+        self.db.cursor.execute(query, (id,))
+        result = self.db.cursor.fetchone()
+        if result:
+            # Converte a lista para um dicionário para facilitar o acesso aos dados
+            cliente = {
+                "id": result[0],
+                "nome": result[1],
+                "email": result[2],
+                "senha": result[3],
+                "telefone": result[4],
+                "torce_flamengo": result[5],
+                "assiste_one_piece": result[6],
+                "cidade": result[7]
+            }
+            return cliente
+        else:
+            return None
+        
+    def cliente_torce_para_flamengo(self, cliente_id):
+        cliente = self.obter_cliente_por_id(cliente_id)
+        if cliente:
+            return cliente["torce_flamengo"]
+        else:
+            return False
+
+    def cliente_assiste_one_piece(self, cliente_id):
+        cliente = self.obter_cliente_por_id(cliente_id)
+        if cliente:
+            return cliente["assiste_one_piece"]
+        else:
+            return False
+
+    def cliente_eh_de_sousa(self, cliente_id):
+        cliente = self.obter_cliente_por_id(cliente_id)
+        if cliente:
+            return cliente["cidade"].lower() == "sousa"
+        else:
+            return False
         
         
     def listar_todos(self):
@@ -368,6 +416,7 @@ class VendaManager:
         query = "SELECT forma_pagamento, COUNT(*) FROM Venda GROUP BY forma_pagamento"
         self.db.cursor.execute(query)
         return self.db.cursor.fetchall()
+    
 
 class ItemVendaManager:
     def __init__(self, db):
@@ -414,39 +463,26 @@ def main():
     
     # Criar objetos dos gerenciadores de cada entidade
     estoque_manager = EstoqueManager(db)
+    venda_manager = VendaManager(db)
+    cliente_manager = ClienteManager(db)  # Adicionado o gerenciador de clientes
+    item_venda_manager = ItemVendaManager(db)  # Adicionado o gerenciador de itens de venda
     print("Objetos dos gerenciadores criados com sucesso!")
 
     # Lista de alimentos para inserir no estoque
     alimentos = [
-        ("Feijão", "Feijão carioquinha", Decimal('5.0'), "Grãos", "Sudeste", True, 100),
-        ("Arroz", "Arroz branco", Decimal('10.0'), "Grãos", "Sudeste", True, 150),
         ("Cuscuz", "Cuscuz nordestino", Decimal('3.0'), "Grãos", "Nordeste", True, 80),
-        ("Paçoca", "Doce de amendoim", Decimal('2.5'), "Doces", "Nordeste", False, 0),
         ("Tapioca", "Tapioca com coco", Decimal('4.0'), "Grãos", "Nordeste", True, 50),
-        ("Vatapá", "Prato típico da Bahia", Decimal('15.0'), "Pratos Quentes", "Nordeste", True, 30),
-        ("Moqueca", "Moqueca de peixe", Decimal('20.0'), "Pratos Quentes", "Nordeste", True, 40),
         ("Carne de Sol", "Carne de sol com mandioca", Decimal('25.0'), "Pratos Quentes", "Nordeste", True, 60),
-        ("Canjica", "Doce de milho", Decimal('8.0'), "Doces", "Sudeste", True, 70),
-        ("Pamonha", "Pamonha recheada", Decimal('6.0'), "Doces", "Sudeste", True, 90),
         ("Feijoada", "Prato típico brasileiro", Decimal('30.0'), "Pratos Quentes", "Sudeste", True, 120),
         ("Acarajé", "Bolinho de feijão fradinho", Decimal('7.0'), "Petiscos", "Nordeste", True, 50),
-        ("Bolo de rolo", "Bolo de rolo de goiabada", Decimal('12.0'), "Doces", "Nordeste", True, 40),
         ("Escondidinho", "Prato de carne com purê de mandioca", Decimal('18.0'), "Pratos Quentes", "Nordeste", True, 80),
         ("Coxinha", "Salgado de frango", Decimal('3.5'), "Petiscos", "Sudeste", True, 100),
-        ("Quindim", "Doce de coco e gemas", Decimal('5.5'), "Doces", "Sudeste", True, 60),
         ("Buchada de bode", "Prato típico do Nordeste", Decimal('35.0'), "Pratos Quentes", "Nordeste", True, 30),
-        ("Farofa", "Farofa de dendê", Decimal('6.0'), "Acompanhamentos", "Nordeste", True, 70),
         ("Mungunzá", "Canjica salgada", Decimal('9.0'), "Pratos Quentes", "Nordeste", True, 40),
-        ("Tacacá", "Prato típico da região Norte", Decimal('12.0'), "Pratos Quentes", "Norte", True, 50),
-        ("Xinxim de galinha", "Prato típico da Bahia", Decimal('22.0'), "Pratos Quentes", "Nordeste", True, 30),
         ("Baião de dois", "Prato típico do Nordeste", Decimal('18.0'), "Pratos Quentes", "Nordeste", True, 60),
-        ("Torta capixaba", "Prato típico do Espírito Santo", Decimal('25.0'), "Pratos Quentes", "Sudeste", True, 40),
         ("Tutu de feijão", "Feijão cozido com farinha de mandioca", Decimal('10.0'), "Pratos Quentes", "Sudeste", True, 80),
         ("Pão de queijo", "Pão de queijo mineiro", Decimal('3.0'), "Petiscos", "Sudeste", True, 120),
-        ("Cuscuz paulista", "Prato típico de São Paulo", Decimal('15.0'), "Pratos Quentes", "Sudeste", True, 50),
         ("Virado à paulista", "Prato típico de São Paulo", Decimal('20.0'), "Pratos Quentes", "Sudeste", True, 60),
-        ("Sorvete de tapioca", "Sorvete de tapioca com coco", Decimal('7.0'), "Sobremesas", "Nordeste", True, 100),
-        ("Cajuzinho", "Doce de amendoim em formato de caju", Decimal('4.0'), "Doces", "Nordeste", True, 80),
         ("Maniçoba", "Prato típico paraense", Decimal('30.0'), "Pratos Quentes", "Norte", True, 40),
         ("Pirão", "Pirão de peixe", Decimal('5.0'), "Acompanhamentos", "Nordeste", True, 90),
     ]
