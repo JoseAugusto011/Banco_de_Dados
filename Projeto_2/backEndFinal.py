@@ -72,10 +72,20 @@ class EstoqueManager:
     def __init__(self, db):
         self.db = db
 
+    def produto_existe(self, nome):
+        query = "SELECT COUNT(*) FROM Estoque WHERE nome = %s"
+        self.db.cursor.execute(query, (nome,))
+        count = self.db.cursor.fetchone()[0]
+        return count > 0
+
     def inserir(self, nome, descricao, preco, categoria, regiaoOrigem, disponibilidade=False, quantidade=0):
+        if self.produto_existe(nome):
+            print("Produto com este nome já existe. Não é possível inserir.")
+            return
         query = "INSERT INTO Estoque (nome, descricao, preco, categoria, regiaoOrigem, disponibilidade, quantidade) VALUES (%s, %s, %s, %s, %s, %s, %s)"
         self.db.cursor.execute(query, (nome, descricao, preco, categoria, regiaoOrigem, disponibilidade, quantidade))
         self.db.connection.commit()
+        print("Produto inserido com sucesso.")
 
     def remover(self, id):
         query = "DELETE FROM Estoque WHERE id = %s"
@@ -182,10 +192,20 @@ class ClienteManager:
     def __init__(self, db):
         self.db = db
 
+    def cliente_existe(self, email_login):
+        query = "SELECT COUNT(*) FROM Cliente WHERE email_login = %s"
+        self.db.cursor.execute(query, (email_login,))
+        count = self.db.cursor.fetchone()[0]
+        return count > 0
+
     def inserir(self, nome, email_login, senha_login, telefone, torceFlamengo, assisteOnePiece, cidade):
+        if self.cliente_existe(email_login):
+            print("Cliente com este e-mail já existe. Não é possível inserir.")
+            return
         query = "INSERT INTO Cliente (nome, email_login, senha_login, telefone, torceFlamengo, assisteOnePiece, cidade) VALUES (%s, %s, %s, %s, %s, %s, %s)"
         self.db.cursor.execute(query, (nome, email_login, senha_login, telefone, torceFlamengo, assisteOnePiece, cidade))
         self.db.connection.commit()
+        print("Cliente inserido com sucesso.")
 
     def remover(self, id):
         query = "DELETE FROM Cliente WHERE id = %s"
@@ -339,25 +359,6 @@ class VendaManager:
         self.db.cursor.execute(query, (data_venda, id))
         self.db.connection.commit()
 
-    def calcular_valor_total_venda(self, id_venda):
-        query = "SELECT SUM(ItemVenda.quantidade * Estoque.preco) FROM ItemVenda INNER JOIN Estoque ON ItemVenda.id_produto = Estoque.id WHERE id_venda = %s"
-
-        self.db.cursor.execute(query, (id_venda,))
-        result = self.db.cursor.fetchone()[0]
-        return result if result is not None else 0
-
-    def aplicar_desconto(self, id_cliente, valor_total):
-        query = "SELECT torceFlamengo, assisteOnePiece, cidade FROM Cliente WHERE id = %s"
-        self.db.cursor.execute(query, (id_cliente,))
-        cliente_info = self.db.cursor.fetchone()
-        desconto = Decimal('0')
-        if cliente_info[0] or cliente_info[1] or cliente_info[2] == 'Sousa':
-            # Convertendo o valor total para Decimal antes de aplicar o desconto
-            valor_total_decimal = Decimal(str(valor_total))
-            # Desconto de 10% para clientes que torcem pelo Flamengo, assistem One Piece ou são de Sousa
-            desconto = valor_total_decimal * Decimal('0.1')  
-        # Arredonda o desconto para duas casas decimais e retorna o valor total com desconto
-        return (valor_total_decimal - desconto).quantize(Decimal('0.01'))
 
 
     def criar_view_produtos_mais_comprados(self):
@@ -433,7 +434,7 @@ class ItemVendaManager:
 def main():
     host = "localhost"
     user = "root"
-    password = "jasbhisto"
+    password = "010203"
     database = "comidas_tipicas"
     
     # Conectar ao banco de dados
