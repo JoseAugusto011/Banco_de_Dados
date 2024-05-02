@@ -72,20 +72,10 @@ class EstoqueManager:
     def __init__(self, db):
         self.db = db
 
-    def produto_existe(self, nome):
-        query = "SELECT COUNT(*) FROM Estoque WHERE nome = %s"
-        self.db.cursor.execute(query, (nome,))
-        count = self.db.cursor.fetchone()[0]
-        return count > 0
-
     def inserir(self, nome, descricao, preco, categoria, regiaoOrigem, disponibilidade=False, quantidade=0):
-        if self.produto_existe(nome):
-            print("Produto com este nome já existe. Não é possível inserir.")
-            return
         query = "INSERT INTO Estoque (nome, descricao, preco, categoria, regiaoOrigem, disponibilidade, quantidade) VALUES (%s, %s, %s, %s, %s, %s, %s)"
         self.db.cursor.execute(query, (nome, descricao, preco, categoria, regiaoOrigem, disponibilidade, quantidade))
         self.db.connection.commit()
-        print("Produto inserido com sucesso.")
 
     def remover(self, id):
         query = "DELETE FROM Estoque WHERE id = %s"
@@ -192,20 +182,10 @@ class ClienteManager:
     def __init__(self, db):
         self.db = db
 
-    def cliente_existe(self, email_login):
-        query = "SELECT COUNT(*) FROM Cliente WHERE email_login = %s"
-        self.db.cursor.execute(query, (email_login,))
-        count = self.db.cursor.fetchone()[0]
-        return count > 0
-
     def inserir(self, nome, email_login, senha_login, telefone, torceFlamengo, assisteOnePiece, cidade):
-        if self.cliente_existe(email_login):
-            print("Cliente com este e-mail já existe. Não é possível inserir.")
-            return
         query = "INSERT INTO Cliente (nome, email_login, senha_login, telefone, torceFlamengo, assisteOnePiece, cidade) VALUES (%s, %s, %s, %s, %s, %s, %s)"
         self.db.cursor.execute(query, (nome, email_login, senha_login, telefone, torceFlamengo, assisteOnePiece, cidade))
         self.db.connection.commit()
-        print("Cliente inserido com sucesso.")
 
     def remover(self, id):
         query = "DELETE FROM Cliente WHERE id = %s"
@@ -453,7 +433,7 @@ class ItemVendaManager:
 def main():
     host = "localhost"
     user = "root"
-    password = "010203"
+    password = "jasbhisto"
     database = "comidas_tipicas"
     
     # Conectar ao banco de dados
