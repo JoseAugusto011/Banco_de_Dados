@@ -1,8 +1,9 @@
 import tkinter as tk
-import decimal
+from datetime import datetime 
 from tkinter import ttk
 from tkinter import messagebox
-from backEndFinal import Database, EstoqueManager, ClienteManager
+from backEndFinal import Database, EstoqueManager, ClienteManager, VendaManager, ItemVendaManager
+
 
 class ListaPratosWindow:
     def __init__(self, master, db):
@@ -75,6 +76,12 @@ class ListaPratosWindow:
                 # Diminuir o tamanho da fonte do nome do prato
                 self.table.tag_configure("small", font=("TkDefaultFont", 8))
                 self.table.item(self.table.selection(), tags=("small",))  # Aplica o estilo de fonte ao item
+
+    def limpar_labels(self):
+        # Limpa o texto dos labels que exibem os itens selecionados e a forma de pagamento
+        for entry in self.quantidade_entries:
+            entry.delete(0, tk.END)
+        
 
     def abrir_cadastro(self):
         self.cadastro_window = tk.Toplevel(self.master)
@@ -178,7 +185,31 @@ class ListaPratosWindow:
             self.quantidade_entries.append(quantidade_entry)
 
         # Adicione um botão para finalizar a compra
-        tk.Button(self.compra_frame, text="Finalizar Compra", command=self.finalizar_compra).pack()
+        tk.Button(self.compra_frame, text="Comprar", command=self.finalizar_compra).pack()
+
+        # Adicione um botão para visualizar os dados do cliente logado
+        tk.Button(self.compra_frame, text="Ver Meus Dados", command=self.ver_dados_cliente).pack()
+
+    def ver_dados_cliente(self):
+        # Crie uma janela pop-up para exibir os dados do cliente
+        dados_cliente_window = tk.Toplevel(self.master)
+        dados_cliente_window.title("Meus Dados")
+
+        # Obtenha os dados do cliente do banco de dados
+        cliente_manager = ClienteManager(self.db)
+        dados_cliente = cliente_manager.obter_cliente_por_id(self.cliente_id)
+
+        # Exiba os dados do cliente na janela pop-up
+        tk.Label(dados_cliente_window, text="ID: " + str(dados_cliente["id"])).pack()
+        tk.Label(dados_cliente_window, text="Nome: " + dados_cliente["nome"]).pack()
+        tk.Label(dados_cliente_window, text="E-mail: " + dados_cliente["email"]).pack()
+        tk.Label(dados_cliente_window, text="Senha: " + dados_cliente["senha"]).pack()
+        tk.Label(dados_cliente_window, text="Telefone: " + dados_cliente["telefone"]).pack()
+        tk.Label(dados_cliente_window, text="Cidade: " + dados_cliente["cidade"]).pack()
+        tk.Label(dados_cliente_window, text="Torcedor do Flamengo: " + ("Sim" if dados_cliente["torce_flamengo"] else "Não")).pack()
+        tk.Label(dados_cliente_window, text="Assiste One Piece: " + ("Sim" if dados_cliente["assiste_one_piece"] else "Não")).pack()
+
+
 
     def finalizar_compra(self):
         itens_selecionados = []  # Lista para armazenar os itens selecionados e suas quantidades
@@ -243,10 +274,39 @@ class ListaPratosWindow:
             opcao_pagamento.set("Pix")  # Opção padrão
             tk.OptionMenu(popup, opcao_pagamento, "Pix", "Boleto", "Cartão", "Berries").pack()
 
-            tk.Button(popup, text="Confirmar Pagamento", command=popup.destroy).pack()
+            # Função para inserir a venda e os itens da venda no banco de dados
+            def inserir_venda():
+                # Inserir a venda no banco de dados
+                venda_manager = VendaManager(self.db)
+                data_venda = datetime.now().strftime("%Y-%m-%d")
+                forma_pagamento = opcao_pagamento.get()  # Obtém a forma de pagamento selecionada
+                status_pagamento = "Pago"  # Define o status de pagamento como "Pago"
+                venda_id = venda_manager.inserir(self.cliente_id, data_venda, forma_pagamento, status_pagamento)  # Obtém o ID da venda recém-inserida
 
-        # Limpar a lista de itens selecionados
-        itens_selecionados.clear()
+                # Inserir os itens da venda no banco de dados
+                item_venda_manager = ItemVendaManager(self.db)
+                for i, prato in enumerate(self.pratos):
+                    quantidade_texto = self.quantidade_entries[i].get()
+                    if quantidade_texto:
+                        quantidade = int(quantidade_texto)
+                        id_produto = prato[0]  # Obtém o ID do produto
+                        item_venda_manager.inserir(venda_id, id_produto, quantidade)
+
+                # Exibe uma mensagem de sucesso
+                messagebox.showinfo("Sucesso", "Compra efetivada com sucesso!")
+
+                # Limpa a lista de itens selecionados
+                itens_selecionados.clear()
+
+                # Fecha a janela de pop-up após a inserção no banco de dados
+                popup.destroy()
+
+                 # Limpa os labels que exibem os itens selecionados e a forma de pagamento
+                self.limpar_labels()
+
+            # Adicionar botão para confirmar o pagamento e inserir no banco de dados
+            tk.Button(popup, text="Confirmar Pagamento", command=inserir_venda).pack()
+
 
 
 

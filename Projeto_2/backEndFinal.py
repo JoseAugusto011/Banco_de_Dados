@@ -87,6 +87,12 @@ class EstoqueManager:
         self.db.connection.commit()
         print("Produto inserido com sucesso.")
 
+    def get_quantidade(self, id):
+        query = "SELECT quantidade FROM Estoque WHERE id = %s"
+        self.db.cursor.execute(query, (id,))
+        return self.db.cursor.fetchone()[0]
+
+
     def remover(self, id):
         query = "DELETE FROM Estoque WHERE id = %s"
         self.db.cursor.execute(query, (id,))
@@ -121,6 +127,7 @@ class EstoqueManager:
         query = "UPDATE Estoque SET disponibilidade = %s WHERE id = %s"
         self.db.cursor.execute(query, (disponibilidade, id))
         self.db.connection.commit()
+
 
     def atualizar_quantidade(self, id, quantidade):
         query = "UPDATE Estoque SET quantidade = %s WHERE id = %s"
@@ -187,6 +194,20 @@ class EstoqueManager:
         """
         self.db.cursor.execute(query)
         self.db.connection.commit()
+    
+    def diminuir_quantidade(self, id, quantidade):
+        query = "UPDATE Estoque SET quantidade = quantidade - %s WHERE id = %s"
+        self.db.cursor.execute(query, (quantidade, id))
+        self.db.connection.commit()
+
+        # Verificar se a quantidade em estoque chegou a 0
+        quantidade_atual = self.get_quantidade(id)
+        if quantidade_atual == 0:
+            # Atualizar o status de disponibilidade para "Indisponível"
+            self.atualizar_disponibilidade(id, False)  # Use False para "Indisponível"
+
+
+
 
 class ClienteManager:
     def __init__(self, db):
@@ -338,6 +359,9 @@ class VendaManager:
         query = "INSERT INTO Venda (id_cliente, data_venda, forma_pagamento, status_pagamento) VALUES (%s, %s, %s, %s)"
         self.db.cursor.execute(query, (id_cliente, data_venda, forma_pagamento, status_pagamento))
         self.db.connection.commit()
+        return self.db.cursor.lastrowid  # Retorna o ID da última linha inserida
+
+
 
     def atualizar_forma_pagamento(self, id_venda, forma_pagamento):
         query = "UPDATE Venda SET forma_pagamento = %s WHERE id = %s"
@@ -404,9 +428,21 @@ class ItemVendaManager:
         self.db = db
 
     def inserir(self, id_venda, id_produto, quantidade):
+        # Verificar se há quantidade suficiente no estoque
+        estoque_manager = EstoqueManager(self.db)
+        quantidade_atual = estoque_manager.get_quantidade(id_produto)
+        if quantidade_atual < quantidade:
+            print("Quantidade insuficiente no estoque.")
+            return
+
         query = "INSERT INTO ItemVenda (id_venda, id_produto, quantidade) VALUES (%s, %s, %s)"
         self.db.cursor.execute(query, (id_venda, id_produto, quantidade))
         self.db.connection.commit()
+
+        # Diminuir a quantidade do produto no estoque
+        estoque_manager.diminuir_quantidade(id_produto, quantidade)
+
+
 
     def remover(self, id):
         query = "DELETE FROM ItemVenda WHERE id = %s"
