@@ -2,6 +2,7 @@ import tkinter as tk
 from datetime import datetime 
 from tkinter import ttk
 from tkinter import messagebox
+from tkinter import scrolledtext
 from backEndFinal import Database, EstoqueManager, ClienteManager, VendaManager, ItemVendaManager
 
 
@@ -14,6 +15,11 @@ class ListaPratosWindow:
         self.master.state('zoomed')  
 
         self.create_widgets()
+
+    def sair_do_sistema(self):
+        # Reinicia o programa fechando a janela principal
+        self.master.destroy()
+        main()  # Reinicia o programa
 
     def create_widgets(self):
         self.prato_frame = tk.Frame(self.master)
@@ -47,11 +53,14 @@ class ListaPratosWindow:
         self.atualizar_lista_pratos()
 
         # Botões
-        self.btn_cadastro = tk.Button(self.prato_frame, text="Cadastro", command=self.abrir_cadastro, bg="red", fg="black")
+        self.btn_cadastro = tk.Button(self.prato_frame, text="Cadastro", command=self.abrir_cadastro, bg="white", fg="black")
         self.btn_cadastro.pack(anchor=tk.E)
 
-        self.btn_login = tk.Button(self.prato_frame, text="Login", command=self.abrir_login, bg="red", fg="black")
+        self.btn_login = tk.Button(self.prato_frame, text="Login", command=self.abrir_login, bg="white", fg="black")
         self.btn_login.pack(anchor=tk.E)
+
+        self.btn_sair = tk.Button(self.prato_frame, text="Sair", command=self.sair_do_sistema, bg="white", fg="black")
+        self.btn_sair.pack(anchor=tk.E)
 
         # Variáveis de entrada e botões
         self.nome_entry = None
@@ -195,20 +204,59 @@ class ListaPratosWindow:
         dados_cliente_window = tk.Toplevel(self.master)
         dados_cliente_window.title("Meus Dados")
 
+        # Crie um ScrolledText widget
+        st = scrolledtext.ScrolledText(dados_cliente_window, width=50, height=10)
+
         # Obtenha os dados do cliente do banco de dados
         cliente_manager = ClienteManager(self.db)
         dados_cliente = cliente_manager.obter_cliente_por_id(self.cliente_id)
 
         # Exiba os dados do cliente na janela pop-up
-        tk.Label(dados_cliente_window, text="ID: " + str(dados_cliente["id"])).pack()
-        tk.Label(dados_cliente_window, text="Nome: " + dados_cliente["nome"]).pack()
-        tk.Label(dados_cliente_window, text="E-mail: " + dados_cliente["email"]).pack()
-        tk.Label(dados_cliente_window, text="Senha: " + dados_cliente["senha"]).pack()
-        tk.Label(dados_cliente_window, text="Telefone: " + dados_cliente["telefone"]).pack()
-        tk.Label(dados_cliente_window, text="Cidade: " + dados_cliente["cidade"]).pack()
-        tk.Label(dados_cliente_window, text="Torcedor do Flamengo: " + ("Sim" if dados_cliente["torce_flamengo"] else "Não")).pack()
-        tk.Label(dados_cliente_window, text="Assiste One Piece: " + ("Sim" if dados_cliente["assiste_one_piece"] else "Não")).pack()
+        st.insert(tk.INSERT, "--- Dados do Cliente ---\n")
+        st.insert(tk.INSERT, "ID: " + str(dados_cliente["id"]) + "\n")
+        st.insert(tk.INSERT, "Nome: " + dados_cliente["nome"] + "\n")
+        st.insert(tk.INSERT, "E-mail: " + dados_cliente["email"] + "\n")
+        st.insert(tk.INSERT, "Senha: " + dados_cliente["senha"] + "\n")
+        st.insert(tk.INSERT, "Telefone: " + dados_cliente["telefone"] + "\n")
+        st.insert(tk.INSERT, "Cidade: " + dados_cliente["cidade"] + "\n")
+        st.insert(tk.INSERT, "Torcedor do Flamengo: " + ("Sim" if dados_cliente["torce_flamengo"] else "Não") + "\n")
+        st.insert(tk.INSERT, "Assiste One Piece: " + ("Sim" if dados_cliente["assiste_one_piece"] else "Não") + "\n")
 
+        # Obtenha as vendas do cliente
+        venda_manager = VendaManager(self.db)
+        vendas_cliente = venda_manager.listar_vendas_por_cliente(self.cliente_id)
+
+        # Exiba as vendas do cliente na janela pop-up
+        for i, venda in enumerate(vendas_cliente, start=1):
+            venda_dict = {
+                "id": venda[0],
+                "data_venda": str(venda[2]),  # Converta a data para uma string
+                "forma_pagamento": str(venda[3]),  # Converta a forma de pagamento para uma string
+                "status_pagamento": venda[4]
+            }
+            st.insert(tk.INSERT, f"//////// Compra {i} (Venda ID: {venda_dict['id']}) ////////\n")
+            st.insert(tk.INSERT, "Data da Venda: " + venda_dict["data_venda"] + "\n")
+            st.insert(tk.INSERT, "Forma de Pagamento: " + venda_dict["forma_pagamento"] + "\n")
+            st.insert(tk.INSERT, "Status do Pagamento: " + venda_dict["status_pagamento"] + "\n")
+
+            # Obtenha os itens de venda da venda
+            item_venda_manager = ItemVendaManager(self.db)
+            itens_venda = item_venda_manager.listar_itens_por_venda(venda_dict["id"])
+
+            # Exiba os itens de venda na janela pop-up
+            for item in itens_venda:
+                item_dict = {
+                    "id": item[0],
+                    "id_produto": item[2],
+                    "quantidade": item[3]
+                }
+                nome_produto = item_venda_manager.get_nome_produto(item_dict["id_produto"])
+                st.insert(tk.INSERT, "--- Item ID: " + str(item_dict["id"]) + " ---\n")
+                st.insert(tk.INSERT, "Produto: " + nome_produto + "\n")
+                st.insert(tk.INSERT, "Quantidade: " + str(item_dict["quantidade"]) + "\n")
+
+        # Empacote o ScrolledText widget
+        st.pack(expand=True, fill=tk.BOTH)
 
 
     def finalizar_compra(self):
@@ -303,6 +351,9 @@ class ListaPratosWindow:
 
                  # Limpa os labels que exibem os itens selecionados e a forma de pagamento
                 self.limpar_labels()
+
+                # Atualizar a lista de pratos
+                self.atualizar_lista_pratos()
 
             # Adicionar botão para confirmar o pagamento e inserir no banco de dados
             tk.Button(popup, text="Confirmar Pagamento", command=inserir_venda).pack()

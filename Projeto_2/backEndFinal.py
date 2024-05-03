@@ -91,6 +91,13 @@ class EstoqueManager:
         query = "SELECT quantidade FROM Estoque WHERE id = %s"
         self.db.cursor.execute(query, (id,))
         return self.db.cursor.fetchone()[0]
+    
+    def get_nome_produto(self, id):
+        query = "SELECT nome FROM Estoque WHERE id = %s"
+        self.db.cursor.execute(query, (id,))
+        result = self.db.cursor.fetchone()
+        return result[0] if result is not None else None
+
 
 
     def remover(self, id):
@@ -442,7 +449,10 @@ class ItemVendaManager:
         # Diminuir a quantidade do produto no estoque
         estoque_manager.diminuir_quantidade(id_produto, quantidade)
 
-
+    def get_nome_produto(self, id_produto):
+        query = "SELECT nome FROM Estoque WHERE id = %s"
+        self.db.cursor.execute(query, (id_produto,))
+        return self.db.cursor.fetchone()[0]
 
     def remover(self, id):
         query = "DELETE FROM ItemVenda WHERE id = %s"
@@ -463,6 +473,11 @@ class ItemVendaManager:
         query = "UPDATE ItemVenda SET quantidade = %s WHERE id = %s"
         self.db.cursor.execute(query, (quantidade, id))
         self.db.connection.commit()
+    
+    def listar_itens_por_venda(self, id_venda):
+        query = "SELECT * FROM ItemVenda WHERE id_venda = %s"
+        self.db.cursor.execute(query, (id_venda,))
+        return self.db.cursor.fetchall()
         
         
         
